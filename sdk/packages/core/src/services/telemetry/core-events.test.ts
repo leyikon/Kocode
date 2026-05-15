@@ -2,6 +2,7 @@ import type { ITelemetryService } from "@cline/shared";
 import { describe, expect, test, vi } from "vitest";
 import {
 	CORE_TELEMETRY_EVENTS,
+	captureCompactionBudgetEmergency,
 	captureCompactionExecuted,
 	captureCompactionSkipped,
 	captureExtensionActivated,
@@ -347,6 +348,38 @@ describe("captureCompactionSkipped", () => {
 	});
 });
 
+describe("captureCompactionBudgetEmergency", () => {
+	test("emits task.compaction_budget_emergency with action metadata", () => {
+		const stub = createTelemetryStub();
+		captureCompactionBudgetEmergency(stub.telemetry, {
+			ulid: "ulid-1",
+			strategy: "basic",
+			mode: "auto",
+			policyIntent: "basic_compaction_projection",
+			actionCount: 2,
+			warningCount: 1,
+			liveTailHandling: "included_degraded",
+			provider: "anthropic",
+			modelId: "claude-sonnet-4",
+		});
+
+		const { event, properties } = captureCallAt(stub, 0);
+		expect(event).toBe("task.compaction_budget_emergency");
+		expect(properties).toMatchObject({
+			ulid: "ulid-1",
+			strategy: "basic",
+			mode: "auto",
+			policyIntent: "basic_compaction_projection",
+			actionCount: 2,
+			warningCount: 1,
+			liveTailHandling: "included_degraded",
+		});
+		expect(typeof (properties as Record<string, unknown>).timestamp).toBe(
+			"string",
+		);
+	});
+});
+
 /**
  * Telemetry-policy regression coverage.
  *
@@ -493,6 +526,24 @@ describe("telemetry policy: helpers respect telemetry opt-out", () => {
 		expect(emitRequired).not.toHaveBeenCalled();
 	});
 
+	test("captureCompactionBudgetEmergency never invokes captureRequired", () => {
+		const { adapter, emitRequired } = createDisabledAdapter();
+		const service = new TelemetryService({
+			distinctId: "test-distinct-id",
+			adapters: [adapter],
+		});
+		captureCompactionBudgetEmergency(service, {
+			ulid: "ulid-1",
+			strategy: "basic",
+			mode: "auto",
+			policyIntent: "basic_compaction_projection",
+			actionCount: 1,
+			warningCount: 0,
+			liveTailHandling: "included_degraded",
+		});
+		expect(emitRequired).not.toHaveBeenCalled();
+	});
+
 	test("a correctly-policed adapter drops these events when disabled", () => {
 		// This test layers on top of the previous four to assert the *full*
 		// end-to-end policy: when the adapter is disabled, a real adapter
@@ -564,6 +615,15 @@ describe("telemetry policy: helpers respect telemetry opt-out", () => {
 			thresholdRatio: 0.9,
 			durationMs: 17,
 		});
+		captureCompactionBudgetEmergency(service, {
+			ulid: "ulid-1",
+			strategy: "basic",
+			mode: "auto",
+			policyIntent: "basic_compaction_projection",
+			actionCount: 1,
+			warningCount: 0,
+			liveTailHandling: "included_degraded",
+		});
 		expect(observed).toEqual([]);
 		expect(dropped).toEqual([
 			"user.extension_activated",
@@ -573,6 +633,7 @@ describe("telemetry policy: helpers respect telemetry opt-out", () => {
 			"user.provider_configured",
 			"task.compaction_executed",
 			"task.compaction_skipped",
+			"task.compaction_budget_emergency",
 		]);
 	});
 });
