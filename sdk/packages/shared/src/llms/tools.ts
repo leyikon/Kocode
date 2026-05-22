@@ -82,6 +82,11 @@ export interface ToolApprovalRequest {
 export interface ToolApprovalResult {
 	approved: boolean;
 	reason?: string;
+	/**
+	 * Whether approval was granted automatically without a user prompt. Hosts may
+	 * omit this when they cannot distinguish auto-approval from user approval.
+	 */
+	autoApproved?: boolean;
 }
 
 export const ToolCallRecordSchema = z.object({
