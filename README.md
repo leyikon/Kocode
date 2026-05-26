@@ -1,42 +1,65 @@
 # Kocode / ココーデ
 
-> 大学生のための AI プログラミング TA
+> はじめての vibe coding を、もっとやさしく、もっと人間らしく。
 
-**Kocode** is a VS Code based AI programming tutor for university students in
-Japan. It is designed to explain code and errors in approachable Japanese,
-support Chinese-speaking international students, and help learners reach an
-answer through hints instead of simply handing in generated solutions.
+**Kocode** is a warmer, less intimidating coding companion for students and
+first-time vibe coders. It is built as a VS Code extension, but its goal is not
+to feel like a professional developer tool. Kocode should feel like someone
+kind is sitting beside you, helping you turn vague ideas into something that
+works.
+
+The product direction is simple:
+
+**De-professionalize coding. Make the editor feel friendly, conversational, and
+alive.**
 
 ## Product Goal
 
-Kocode aims to make introductory programming courses easier to learn without
-replacing the student's thinking process. The first product milestone is a
-usable VS Code extension MVP focused on learning support.
+Most coding tools assume the user already speaks like an engineer. Kocode goes
+the other way. It avoids unnecessary technical words, explains unfamiliar ideas
+gently, and helps people keep moving even when they only have a rough feeling
+like "I want to make this kind of app."
 
-| Feature | Purpose |
+Kocode is for people who want to start creating with AI before they know all
+the professional vocabulary.
+
+## Core Experience
+
+| Direction | What It Means |
 | --- | --- |
-| エラー解説 | Explain terminal and compiler errors in beginner-friendly Japanese. |
-| コード説明 | Explain selected code clearly, including line-by-line guidance. |
-| ヒントモード | Provide hints and next steps without immediately outputting a full answer. |
-| 課題チェック | Check coursework code for obvious syntax, logic, naming, and omission issues. |
-| 留学生サポート | Switch between Japanese and Chinese explanations. |
-| 本気モード | Use stronger models selectively for difficult debugging tasks. |
-| モデルルーティング | Route routine questions to lower-cost models and reserve costly calls for harder work. |
+| やさしい会話 | Explain things in warm, simple language instead of dense technical terms. |
+| ここちゃん | Build a light anime-style companion character who makes the editor feel less cold. |
+| Vibe first | Let users describe feelings, images, and rough ideas before exact requirements. |
+| No jargon wall | If a technical word is needed, explain it softly with an example. |
+| Human editing | Make code changes feel like a collaborative conversation, not a machine command. |
+| Beginner-safe flow | Guide first-time users step by step without making them feel behind. |
+| Cost-aware models | Use stronger models only when the task really needs them. |
 
 ## Who It Serves
 
-- Japanese university students learning Python, Java, C, or C++.
-- Information science students who want faster, more understandable debugging.
-- Students in data science courses who need accessible Python explanations.
-- Chinese and other international students studying programming in Japanese.
-- Students building portfolios while learning responsible AI-assisted development.
+- Students who want to try vibe coding for the first time.
+- People who are curious about making apps but do not feel like "programmers" yet.
+- Creators who have ideas, characters, stories, designs, or moods they want to turn into software.
+- Beginners who feel stressed by professional tools, English jargon, or error messages.
+- Japanese users who want a softer, more familiar coding experience.
 
-## Learning Principles
+## Tone Principles
 
-1. Explain the reason behind an error before proposing a fix.
-2. Prefer guided hints in coursework contexts over complete generated answers.
-3. Use clear Japanese by default and offer Chinese support when useful.
-4. Control model cost through difficulty-aware routing and explicit advanced usage.
+1. Speak like a patient companion, not a senior engineer giving a lecture.
+2. Prefer plain words. When jargon is unavoidable, translate it into everyday language.
+3. Start from the user's feeling or goal before discussing implementation.
+4. Make errors feel solvable, not embarrassing.
+5. Let the character voice add warmth without getting in the way of serious work.
+6. Treat coding as a creative activity, not only a professional skill.
+
+## Planned MVP
+
+- A friendly Kocode sidebar experience in VS Code.
+- A soft Japanese-first conversation style for code creation and debugging.
+- A beginner mode that avoids professional vocabulary where possible.
+- Gentle error explanations that say what happened and what to try next.
+- Character-driven UI moments around the companion role of `ここちゃん`.
+- Smart model routing so casual tasks stay affordable and hard tasks still get enough power.
 
 ## Status
 
@@ -44,16 +67,8 @@ This repository is the initial Kocode fork and rebranding baseline. Current
 work focuses on the VS Code extension under [`apps/vscode`](./apps/vscode).
 Internal `cline.*` command IDs, protocol paths, service integrations, and SDK
 package names are intentionally retained during the initial migration so the
-upstream code remains buildable while Kocode-specific learning features are
+upstream code remains buildable while Kocode-specific experience work is
 developed.
-
-Planned MVP work:
-
-- Japanese-first explanation and error analysis UX.
-- Hint mode and answer-withholding learning safeguards.
-- Assignment check flows for common university programming languages.
-- Japanese/Chinese language switching.
-- Task difficulty classification and model routing controls.
 
 ## Development
 
@@ -75,5 +90,5 @@ git fetch upstream
 
 Kocode is derived from [Cline](https://github.com/cline/cline), an open-source
 project licensed under the [Apache License 2.0](./LICENSE). Original copyright
-and license notices are preserved. Kocode is an independent educational product
-direction and is not represented as an official Cline release.
+and license notices are preserved. Kocode is an independent product direction
+and is not represented as an official Cline release.

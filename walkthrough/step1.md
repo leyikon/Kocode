@@ -1,6 +1,6 @@
-# Start From Understanding
+# Start With A Vibe
 
-**Kocode helps you clarify the problem before changing code.**
+**You do not need perfect technical words to begin.**
 
-Describe the lesson, assignment, or error you are facing. Kocode begins with an
-accessible explanation so you can decide what to try next.
+Tell Kocode what you want to make, what mood you imagine, or what feels stuck.
+It can help turn that fuzzy starting point into a small first step.

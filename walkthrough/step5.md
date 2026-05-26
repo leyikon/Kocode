@@ -1,6 +1,6 @@
-# Keep Thinking In Control
+# Stay In Control
 
-**Hint mode is designed to support learning, not replace it.**
+**A friendly assistant should still let you choose.**
 
-Review each suggestion, ask why it works, and use complete solutions only when
-they serve your learning goal.
+Review each suggestion, ask why it helps, and keep the parts that fit your
+idea. Kocode is here to make building feel easier, not colder.

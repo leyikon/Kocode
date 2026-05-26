@@ -1,6 +1,6 @@
-# Choose The Right Help
+# Keep It Light
 
-**Routine questions should not require the most expensive AI model.**
+**Not every idea needs the heaviest model.**
 
-Kocode is designed to route straightforward learning questions efficiently and
-reserve advanced model support for difficult debugging and multi-file work.
+Kocode is designed to keep casual creation affordable and save stronger models
+for the moments where extra reasoning really helps.

@@ -1,6 +1,6 @@
-# Learn With Context
+# Make Together
 
-**A useful hint may depend on the terminal output or surrounding files.**
+**Good coding can feel like a conversation.**
 
-Share the relevant context and let Kocode explain why an error happened before
-you choose how to fix it.
+Share the file, terminal output, or rough idea you are looking at. Kocode can
+help you decide the next small change without making things sound scary.

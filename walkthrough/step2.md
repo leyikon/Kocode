@@ -1,6 +1,6 @@
-# Explain Code Simply
+# Ask Gently
 
-**Select code and ask Kocode what each important part does.**
+**Questions are welcome, even when they feel basic.**
 
-Use simple Japanese explanations to connect syntax with program behavior.
-Chinese support is planned for students who learn across languages.
+Select code or an error message and ask Kocode to explain it in plain words.
+The goal is to make the editor feel less cold.

@@ -1,24 +1,28 @@
 # Kocode / ココーデ
 
-**大学生のための AI プログラミング TA**
+**はじめての vibe coding を、もっとやさしく。**
 
-Kocode is a learning-first AI programming assistant for students in Japan. It
-aims to help beginners understand code, diagnose errors, and check coursework
-through approachable Japanese explanations and optional Chinese support.
+Kocode is a warm coding companion for students and first-time vibe coders. It
+helps people make things with AI without requiring them to speak like
+professional engineers first.
 
-## Planned MVP Features
+Instead of throwing technical words at the user, Kocode aims to explain gently,
+ask friendly questions, and turn rough ideas into small next steps.
 
-- `エラー解説`: beginner-friendly explanations of terminal and compiler errors.
-- `コード説明`: clear explanations of selected code and important lines.
-- `ヒントモード`: guidance that avoids immediately providing a complete answer.
-- `課題チェック`: checks for obvious issues before an assignment is submitted.
-- `留学生サポート`: Japanese and Chinese explanation modes.
-- `モデルルーティング`: cost-aware selection of suitable AI models.
+## Product Direction
+
+- `やさしい会話`: friendly explanations in simple Japanese.
+- `ここちゃん`: a light anime-style companion character for a warmer editor.
+- `Vibe first`: users can start from a mood, idea, or half-formed image.
+- `No jargon wall`: technical words are explained only when needed.
+- `Gentle debugging`: errors are treated as normal, solvable moments.
+- `Model routing`: stronger models are reserved for tasks that need them.
 
 ## Development Status
 
 Kocode is currently in early development. The extension is based on the open
-source Cline codebase while its student-focused experience is built out.
+source Cline codebase while the softer, character-driven vibe coding experience
+is built out.
 
 ## License And Attribution
 

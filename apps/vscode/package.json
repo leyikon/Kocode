@@ -1,7 +1,7 @@
 {
 	"name": "claude-dev",
 	"displayName": "Kocode",
-	"description": "AI programming TA for university students in Japan, with learning-first code and error explanations.",
+	"description": "A warm, character-driven vibe coding companion for students and first-time creators.",
 	"version": "3.85.0",
 	"icon": "assets/icons/icon.png",
 	"workspaces": [
@@ -31,7 +31,8 @@
 	"keywords": [
 		"kocode",
 		"cline",
-		"education",
+		"vibe-coding",
+		"beginner-friendly",
 		"japanese",
 		"claude",
 		"dev",
@@ -65,21 +66,21 @@
 		"walkthroughs": [
 			{
 				"id": "ClineWalkthrough",
-				"title": "Meet Kocode, your AI programming TA",
-				"description": "Kocode helps students understand code and errors before offering full solutions. Start here:",
+				"title": "Meet Kocode, your gentle vibe coding companion",
+				"description": "Kocode helps first-time creators turn rough ideas into small, friendly next steps. Start here:",
 				"steps": [
 					{
 						"id": "welcome",
 						"title": "Start with a Goal, Not Just a Prompt",
-						"description": "Tell Kocode what you are studying or debugging, and start from a clear explanation.",
+						"description": "Tell Kocode the mood, idea, or thing you want to make. Exact technical words are optional.",
 						"media": {
 							"markdown": "walkthrough/step1.md"
 						}
 					},
 					{
 						"id": "learn",
-						"title": "Let Kocode Explain Your Code",
-						"description": "Select unfamiliar code and ask for a simple, step-by-step explanation.",
+						"title": "Ask Without Feeling Behind",
+						"description": "Select unfamiliar code or an error message and ask for a gentle explanation.",
 						"media": {
 							"markdown": "walkthrough/step2.md"
 						}
@@ -87,7 +88,7 @@
 					{
 						"id": "advanced-features",
 						"title": "Always Use the Best AI Models",
-						"description": "Kocode can route easy questions efficiently and reserve stronger models for difficult debugging.",
+						"description": "Kocode can keep casual creation affordable and call stronger models when a task gets hard.",
 						"media": {
 							"markdown": "walkthrough/step3.md"
 						}
@@ -95,7 +96,7 @@
 					{
 						"id": "mcp",
 						"title": "Extend with Powerful Tools (MCP)",
-						"description": "Use supporting tools when a lesson or project needs context beyond a single file.",
+						"description": "Use supporting tools when your idea needs files, terminal output, or project context.",
 						"media": {
 							"markdown": "walkthrough/step4.md"
 						}
@@ -103,7 +104,7 @@
 					{
 						"id": "getting-started",
 						"title": "You're Always in Control",
-						"description": "Review Kocode's suggestions and learn from each change before accepting it.",
+						"description": "Review Kocode's suggestions like a conversation, then accept only what feels right.",
 						"media": {
 							"markdown": "walkthrough/step5.md"
 						},
