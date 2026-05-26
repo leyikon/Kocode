@@ -73,6 +73,7 @@ interface ChatTextAreaProps {
 	setInputValue: (value: string) => void
 	sendingDisabled: boolean
 	placeholderText: string
+	variant?: "default" | "kocode"
 	selectedFiles: string[]
 	selectedImages: string[]
 	setSelectedImages: React.Dispatch<React.SetStateAction<string[]>>
@@ -200,6 +201,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			setInputValue,
 			sendingDisabled,
 			placeholderText,
+			variant = "default",
 			selectedFiles,
 			selectedImages,
 			setSelectedImages,
@@ -1363,9 +1365,12 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			.replace(/.$/, (match) => match.toUpperCase())
 
 		return (
-			<div>
+			<div className={variant === "kocode" ? "kocode-composer-core" : undefined}>
 				<div
-					className="relative flex transition-colors ease-in-out duration-100 px-3.5 py-2.5"
+					className={cn(
+						"relative flex transition-colors ease-in-out duration-100 px-3.5 py-2.5",
+						variant === "kocode" && "kocode-composer-frame",
+					)}
 					onDragEnter={handleDragEnter}
 					onDragLeave={handleDragLeave}
 					onDragOver={onDragOver}
@@ -1440,7 +1445,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 						autoFocus={true}
 						data-testid="chat-input"
 						maxRows={10}
-						minRows={3}
+						minRows={variant === "kocode" ? 1 : 3}
 						onBlur={handleBlur}
 						onChange={(e) => {
 							handleInputChange(e)
@@ -1510,7 +1515,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 						}}
 						value={inputValue}
 					/>
-					{!inputValue && selectedImages.length === 0 && selectedFiles.length === 0 && (
+					{variant !== "kocode" && !inputValue && selectedImages.length === 0 && selectedFiles.length === 0 && (
 						<div className="text-xs absolute bottom-5 left-6.5 right-16 text-(--vscode-input-placeholderForeground)/50 whitespace-nowrap overflow-hidden text-ellipsis pointer-events-none z-1">
 							Type @ for context, / for slash commands & workflows, hold shift to drag in files/images
 						</div>
@@ -1549,97 +1554,99 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 						</div>
 					</div>
 				</div>
-				<div className="flex justify-between items-center -mt-[2px] px-3 pb-2">
-					{/* Always render both components, but control visibility with CSS */}
-					<div className="relative flex-1 min-w-0 h-5">
-						{/* ButtonGroup - always in DOM but visibility controlled */}
-						<ButtonGroup className="absolute top-0 left-0 right-0 ease-in-out w-full h-5 z-10 flex items-center">
-							<Tooltip>
-								<TooltipContent>Add Context</TooltipContent>
-								<TooltipTrigger>
-									<VSCodeButton
-										appearance="icon"
-										aria-label="Add Context"
-										className="p-0 m-0 flex items-center"
-										data-testid="context-button"
-										onClick={handleContextButtonClick}>
-										<ButtonContainer>
-											<AtSignIcon size={12} />
-										</ButtonContainer>
-									</VSCodeButton>
-								</TooltipTrigger>
-							</Tooltip>
+				{variant !== "kocode" && (
+					<div className="flex justify-between items-center -mt-[2px] px-3 pb-2">
+						{/* Always render both components, but control visibility with CSS */}
+						<div className="relative flex-1 min-w-0 h-5">
+							{/* ButtonGroup - always in DOM but visibility controlled */}
+							<ButtonGroup className="absolute top-0 left-0 right-0 ease-in-out w-full h-5 z-10 flex items-center">
+								<Tooltip>
+									<TooltipContent>Add Context</TooltipContent>
+									<TooltipTrigger>
+										<VSCodeButton
+											appearance="icon"
+											aria-label="Add Context"
+											className="p-0 m-0 flex items-center"
+											data-testid="context-button"
+											onClick={handleContextButtonClick}>
+											<ButtonContainer>
+												<AtSignIcon size={12} />
+											</ButtonContainer>
+										</VSCodeButton>
+									</TooltipTrigger>
+								</Tooltip>
 
-							<Tooltip>
-								<TooltipContent>Add Files & Images</TooltipContent>
-								<TooltipTrigger>
-									<VSCodeButton
-										appearance="icon"
-										aria-label="Add Files & Images"
-										className="p-0 m-0 flex items-center"
-										data-testid="files-button"
-										disabled={shouldDisableFilesAndImages}
-										onClick={() => {
-											if (!shouldDisableFilesAndImages) {
-												onSelectFilesAndImages()
-											}
-										}}>
-										<ButtonContainer>
-											<PlusIcon size={13} />
-										</ButtonContainer>
-									</VSCodeButton>
-								</TooltipTrigger>
-							</Tooltip>
+								<Tooltip>
+									<TooltipContent>Add Files & Images</TooltipContent>
+									<TooltipTrigger>
+										<VSCodeButton
+											appearance="icon"
+											aria-label="Add Files & Images"
+											className="p-0 m-0 flex items-center"
+											data-testid="files-button"
+											disabled={shouldDisableFilesAndImages}
+											onClick={() => {
+												if (!shouldDisableFilesAndImages) {
+													onSelectFilesAndImages()
+												}
+											}}>
+											<ButtonContainer>
+												<PlusIcon size={13} />
+											</ButtonContainer>
+										</VSCodeButton>
+									</TooltipTrigger>
+								</Tooltip>
 
-							<ServersToggleModal />
+								<ServersToggleModal />
 
-							<ClineRulesToggleModal />
+								<ClineRulesToggleModal />
 
-							<ModelContainer>
-								<ModelButtonWrapper>
-									<ModelDisplayButton
-										disabled={false}
-										onClick={handleModelButtonClick}
-										role="button"
-										tabIndex={0}
-										title="Open API Settings">
-										<ModelButtonContent className="text-xs">{modelDisplayName}</ModelButtonContent>
-									</ModelDisplayButton>
-								</ModelButtonWrapper>
-							</ModelContainer>
-						</ButtonGroup>
+								<ModelContainer>
+									<ModelButtonWrapper>
+										<ModelDisplayButton
+											disabled={false}
+											onClick={handleModelButtonClick}
+											role="button"
+											tabIndex={0}
+											title="Open API Settings">
+											<ModelButtonContent className="text-xs">{modelDisplayName}</ModelButtonContent>
+										</ModelDisplayButton>
+									</ModelButtonWrapper>
+								</ModelContainer>
+							</ButtonGroup>
+						</div>
+						{/* Tooltip for Plan/Act toggle remains outside the conditional rendering */}
+						<Tooltip>
+							<TooltipContent
+								className="text-xs px-2 flex flex-col gap-1"
+								hidden={shownTooltipMode === null}
+								side="top">
+								{`In ${shownTooltipMode === "act" ? "Act" : "Plan"}  mode, Cline will ${shownTooltipMode === "act" ? "complete the task immediately" : "gather information to architect a plan"}`}
+								<p className="text-description/80 text-xs mb-0">
+									Toggle w/ <kbd className="text-muted-foreground mx-1">{togglePlanActKeys}</kbd>
+								</p>
+							</TooltipContent>
+							<TooltipTrigger>
+								<SwitchContainer data-testid="mode-switch" disabled={false} onClick={onModeToggle}>
+									<Slider isAct={mode === "act"} isPlan={mode === "plan"} />
+									{["Plan", "Act"].map((m) => (
+										<div
+											aria-checked={mode === m.toLowerCase()}
+											className={cn(
+												"pt-0.5 pb-px px-2 z-10 text-xs w-1/2 text-center bg-transparent",
+												mode === m.toLowerCase() ? "text-white" : "text-input-foreground",
+											)}
+											onMouseLeave={() => setShownTooltipMode(null)}
+											onMouseOver={() => setShownTooltipMode(m.toLowerCase() === "plan" ? "plan" : "act")}
+											role="switch">
+											{m}
+										</div>
+									))}
+								</SwitchContainer>
+							</TooltipTrigger>
+						</Tooltip>
 					</div>
-					{/* Tooltip for Plan/Act toggle remains outside the conditional rendering */}
-					<Tooltip>
-						<TooltipContent
-							className="text-xs px-2 flex flex-col gap-1"
-							hidden={shownTooltipMode === null}
-							side="top">
-							{`In ${shownTooltipMode === "act" ? "Act" : "Plan"}  mode, Cline will ${shownTooltipMode === "act" ? "complete the task immediately" : "gather information to architect a plan"}`}
-							<p className="text-description/80 text-xs mb-0">
-								Toggle w/ <kbd className="text-muted-foreground mx-1">{togglePlanActKeys}</kbd>
-							</p>
-						</TooltipContent>
-						<TooltipTrigger>
-							<SwitchContainer data-testid="mode-switch" disabled={false} onClick={onModeToggle}>
-								<Slider isAct={mode === "act"} isPlan={mode === "plan"} />
-								{["Plan", "Act"].map((m) => (
-									<div
-										aria-checked={mode === m.toLowerCase()}
-										className={cn(
-											"pt-0.5 pb-px px-2 z-10 text-xs w-1/2 text-center bg-transparent",
-											mode === m.toLowerCase() ? "text-white" : "text-input-foreground",
-										)}
-										onMouseLeave={() => setShownTooltipMode(null)}
-										onMouseOver={() => setShownTooltipMode(m.toLowerCase() === "plan" ? "plan" : "act")}
-										role="switch">
-										{m}
-									</div>
-								))}
-							</SwitchContainer>
-						</TooltipTrigger>
-					</Tooltip>
-				</div>
+				)}
 			</div>
 		)
 	},

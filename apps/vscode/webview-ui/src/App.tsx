@@ -1,8 +1,9 @@
 import type { Boolean, EmptyRequest } from "@shared/proto/cline/common"
-import { useCallback, useEffect } from "react"
+import { useCallback, useEffect, useState } from "react"
 import AccountView from "./components/account/AccountView"
 import ChatView from "./components/chat/ChatView"
 import HistoryView from "./components/history/HistoryView"
+import KocodeChatView from "./components/kocode/KocodeChatView"
 import McpView from "./components/mcp/configuration/McpConfigurationView"
 import OnboardingView from "./components/onboarding/OnboardingView"
 import SettingsView from "./components/settings/SettingsView"
@@ -13,6 +14,7 @@ import { Providers } from "./Providers"
 import { UiServiceClient } from "./services/grpc-client"
 
 const AppContent = () => {
+	const [chatExperience, setChatExperience] = useState<"kocode" | "legacy">("kocode")
 	const {
 		didHydrateState,
 		showWelcome,
@@ -78,13 +80,27 @@ const AppContent = () => {
 				/>
 			)}
 			{showWorktrees && <WorktreesView onDone={hideWorktrees} />}
-			{/* Do not conditionally load ChatView, it's expensive and there's state we don't want to lose (user input, disableInput, askResponse promise, etc.) */}
-			<ChatView
-				hideAnnouncement={hideAnnouncement}
-				isHidden={showSettings || showHistory || showMcp || showAccount || showWorktrees}
-				showAnnouncement={showAnnouncement}
-				showHistoryView={navigateToHistory}
-			/>
+			{chatExperience === "kocode" ? (
+				<KocodeChatView
+					isHidden={showSettings || showHistory || showMcp || showAccount || showWorktrees}
+					onOpenLegacy={() => setChatExperience("legacy")}
+				/>
+			) : (
+				<div className="relative flex h-full min-h-0 flex-col">
+					{/* Legacy chat remains available while Kocode is developed independently. */}
+					<ChatView
+						hideAnnouncement={hideAnnouncement}
+						isHidden={showSettings || showHistory || showMcp || showAccount || showWorktrees}
+						showAnnouncement={showAnnouncement}
+						showHistoryView={navigateToHistory}
+					/>
+					{!showSettings && !showHistory && !showMcp && !showAccount && !showWorktrees && (
+						<button className="kocode-legacy-return" onClick={() => setChatExperience("kocode")} type="button">
+							ここちゃん画面へ
+						</button>
+					)}
+				</div>
+			)}
 		</div>
 	)
 }

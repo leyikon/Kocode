@@ -10,6 +10,7 @@ interface InputSectionProps {
 	placeholderText: string
 	shouldDisableFilesAndImages: boolean
 	selectFilesAndImages: () => Promise<void>
+	variant?: "default" | "kocode"
 }
 
 /**
@@ -22,6 +23,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
 	placeholderText,
 	shouldDisableFilesAndImages,
 	selectFilesAndImages,
+	variant = "default",
 }) => {
 	const {
 		activeQuote,
@@ -72,6 +74,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
 				setSelectedFiles={setSelectedFiles}
 				setSelectedImages={setSelectedImages}
 				shouldDisableFilesAndImages={shouldDisableFilesAndImages}
+				variant={variant}
 			/>
 		</>
 	)

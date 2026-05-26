@@ -103,7 +103,7 @@ export default defineConfig({
 		chunkSizeWarningLimit: 100000,
 	},
 	server: {
-		port: 25463,
+		port: 25463, origin: "http://localhost:25463",
 		hmr: {
 			host: "localhost",
 			protocol: "ws",
