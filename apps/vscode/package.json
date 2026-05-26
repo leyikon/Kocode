@@ -1,7 +1,7 @@
 {
 	"name": "claude-dev",
-	"displayName": "Cline",
-	"description": "Autonomous coding agent right in your IDE, capable of creating/editing files, running commands, using the browser, and more with your permission every step of the way.",
+	"displayName": "Kocode",
+	"description": "AI programming TA for university students in Japan, with learning-first code and error explanations.",
 	"version": "3.85.0",
 	"icon": "assets/icons/icon.png",
 	"workspaces": [
@@ -17,9 +17,9 @@
 	"publisher": "saoudrizwan",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/cline/cline"
+		"url": "https://github.com/leyikon/Kocode"
 	},
-	"homepage": "https://cline.bot",
+	"homepage": "https://github.com/leyikon/Kocode",
 	"categories": [
 		"AI",
 		"Chat",
@@ -29,7 +29,10 @@
 		"Testing"
 	],
 	"keywords": [
+		"kocode",
 		"cline",
+		"education",
+		"japanese",
 		"claude",
 		"dev",
 		"mcp",
@@ -52,7 +55,7 @@
 	"contributes": {
 		"icons": {
 			"cline-icon": {
-				"description": "cline",
+				"description": "kocode",
 				"default": {
 					"fontPath": "assets/icons/cline-bot.woff",
 					"fontCharacter": "\\e900"
@@ -62,21 +65,21 @@
 		"walkthroughs": [
 			{
 				"id": "ClineWalkthrough",
-				"title": "Meet Cline, your new coding partner",
-				"description": "Cline codes like a developer because it thinks like one. Here are 5 ways to put it to work:",
+				"title": "Meet Kocode, your AI programming TA",
+				"description": "Kocode helps students understand code and errors before offering full solutions. Start here:",
 				"steps": [
 					{
 						"id": "welcome",
 						"title": "Start with a Goal, Not Just a Prompt",
-						"description": "Tell Cline what you want to achieve. It plans, asks, and then codes, like a true partner.",
+						"description": "Tell Kocode what you are studying or debugging, and start from a clear explanation.",
 						"media": {
 							"markdown": "walkthrough/step1.md"
 						}
 					},
 					{
 						"id": "learn",
-						"title": "Let Cline Learn Your Codebase",
-						"description": "Point Cline to your project. It builds understanding to make smart, context-aware changes.",
+						"title": "Let Kocode Explain Your Code",
+						"description": "Select unfamiliar code and ask for a simple, step-by-step explanation.",
 						"media": {
 							"markdown": "walkthrough/step2.md"
 						}
@@ -84,7 +87,7 @@
 					{
 						"id": "advanced-features",
 						"title": "Always Use the Best AI Models",
-						"description": "Cline empowers you with State-of-the-Art AI, connecting to top models (Anthropic, Gemini, OpenAI & more).",
+						"description": "Kocode can route easy questions efficiently and reserve stronger models for difficult debugging.",
 						"media": {
 							"markdown": "walkthrough/step3.md"
 						}
@@ -92,7 +95,7 @@
 					{
 						"id": "mcp",
 						"title": "Extend with Powerful Tools (MCP)",
-						"description": "Connect to databases, APIs, or discover new capabilities in the MCP Marketplace.",
+						"description": "Use supporting tools when a lesson or project needs context beyond a single file.",
 						"media": {
 							"markdown": "walkthrough/step4.md"
 						}
@@ -100,7 +103,7 @@
 					{
 						"id": "getting-started",
 						"title": "You're Always in Control",
-						"description": "Review Cline's plans and diffs. Approve changes before they happen. No surprises.",
+						"description": "Review Kocode's suggestions and learn from each change before accepting it.",
 						"media": {
 							"markdown": "walkthrough/step5.md"
 						},
@@ -115,7 +118,7 @@
 			"activitybar": [
 				{
 					"id": "claude-dev-ActivityBar",
-					"title": "Cline",
+					"title": "Kocode",
 					"icon": "assets/icons/icon.svg"
 				}
 			]
@@ -159,90 +162,90 @@
 			{
 				"command": "cline.dev.createTestTasks",
 				"title": "Create Test Tasks",
-				"category": "Cline",
+				"category": "Kocode",
 				"when": "cline.isDevMode"
 			},
 			{
 				"command": "cline.dev.expireMcpOAuthTokens",
 				"title": "Expire MCP OAuth Tokens (for testing)",
-				"category": "Cline",
+				"category": "Kocode",
 				"when": "cline.isDevMode"
 			},
 			{
 				"command": "cline.addToChat",
-				"title": "Add to Cline",
-				"category": "Cline"
+				"title": "Add to Kocode",
+				"category": "Kocode"
 			},
 			{
 				"command": "cline.addTerminalOutputToChat",
-				"title": "Add to Cline",
-				"category": "Cline"
+				"title": "Add to Kocode",
+				"category": "Kocode"
 			},
 			{
 				"command": "cline.focusChatInput",
 				"title": "Jump to Chat Input",
-				"category": "Cline"
+				"category": "Kocode"
 			},
 			{
 				"command": "cline.generateGitCommitMessage",
-				"title": "Generate Commit Message with Cline",
-				"category": "Cline",
+				"title": "Generate Commit Message with Kocode",
+				"category": "Kocode",
 				"icon": "$(cline-icon)"
 			},
 			{
 				"command": "cline.abortGitCommitMessage",
-				"title": "Generate Commit Message with Cline - Stop",
-				"category": "Cline",
+				"title": "Generate Commit Message with Kocode - Stop",
+				"category": "Kocode",
 				"icon": "$(debug-stop)"
 			},
 			{
 				"command": "cline.explainCode",
-				"title": "Explain with Cline",
-				"category": "Cline"
+				"title": "Explain with Kocode",
+				"category": "Kocode"
 			},
 			{
 				"command": "cline.improveCode",
-				"title": "Improve with Cline",
-				"category": "Cline"
+				"title": "Improve with Kocode",
+				"category": "Kocode"
 			},
 			{
 				"command": "cline.jupyterGenerateCell",
-				"title": "Generate Jupyter Cell with Cline",
-				"category": "Cline",
+				"title": "Generate Jupyter Cell with Kocode",
+				"category": "Kocode",
 				"icon": "$(sparkle)"
 			},
 			{
 				"command": "cline.jupyterExplainCell",
-				"title": "Explain Jupyter Cell with Cline",
-				"category": "Cline",
+				"title": "Explain Jupyter Cell with Kocode",
+				"category": "Kocode",
 				"icon": "$(question)"
 			},
 			{
 				"command": "cline.jupyterImproveCell",
-				"title": "Improve Jupyter Cell with Cline",
-				"category": "Cline",
+				"title": "Improve Jupyter Cell with Kocode",
+				"category": "Kocode",
 				"icon": "$(lightbulb)"
 			},
 			{
 				"command": "cline.openWalkthrough",
 				"title": "Open Walkthrough",
-				"category": "Cline"
+				"category": "Kocode"
 			},
 			{
 				"command": "cline.reconstructTaskHistory",
 				"title": "Reconstruct Task History",
-				"category": "Cline"
+				"category": "Kocode"
 			},
 			{
 				"command": "cline.reviewComment.reply",
 				"title": "Reply",
-				"category": "Cline",
+				"category": "Kocode",
 				"enablement": "!commentIsEmpty"
 			},
 			{
 				"command": "cline.reviewComment.addToChat",
-				"title": "Add to Cline Chat",
-				"category": "Cline",
+				"title": "Add to Kocode Chat",
+				"category": "Kocode",
 				"icon": "$(link-external)"
 			}
 		],
@@ -375,7 +378,7 @@
 			]
 		},
 		"configuration": {
-			"title": "Cline",
+			"title": "Kocode",
 			"properties": {}
 		}
 	},
