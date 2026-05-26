@@ -35,6 +35,17 @@ the professional vocabulary.
 | Beginner-safe flow | Guide first-time users step by step without making them feel behind. |
 | Cost-aware models | Use stronger models only when the task really needs them. |
 
+## Character System
+
+Kocode starts with three classic anime-inspired companion personalities:
+
+- `ここちゃん`: the sunny cat-girl main character who calls the user `ボス` and adds a soft `にゃ` tone.
+- `ひめ様`: a proud tsundere princess who teases lightly but always helps clearly.
+- `まな先輩`: a hardworking glasses-wearing upperclassman who explains things calmly and carefully.
+
+See [docs/kocode-characters.md](./docs/kocode-characters.md) for the full
+character bible and Japanese system prompt drafts.
+
 ## Who It Serves
 
 - Students who want to try vibe coding for the first time.
