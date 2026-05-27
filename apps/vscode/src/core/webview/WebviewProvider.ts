@@ -72,20 +72,28 @@ export abstract class WebviewProvider {
 	 * @returns A template string literal containing the HTML that should be
 	 * rendered within the webview panel
 	 */
-	public getHtmlContent(): string {
+	public getHtmlContent(webviewMode?: string): string {
+		return this.getHtmlContentForTarget((assetPath) => this.getWebviewUrl(assetPath), this.getCspSource(), webviewMode)
+	}
+
+	protected getHtmlContentForTarget(
+		getWebviewUrl: (assetPath: string) => string,
+		cspSource: string,
+		webviewMode?: string,
+	): string {
 		// Get the local path to main script run in the webview,
 		// then convert it to a url we can use in the webview.
 		// The JS file from the React build output
-		const scriptUrl = this.getExtensionUrl("webview-ui", "build", "assets", "index.js")
+		const scriptUrl = this.getExtensionUrlFor(getWebviewUrl, "webview-ui", "build", "assets", "index.js")
 
 		// The CSS file from the React build output
-		const stylesUrl = this.getExtensionUrl("webview-ui", "build", "assets", "index.css")
+		const stylesUrl = this.getExtensionUrlFor(getWebviewUrl, "webview-ui", "build", "assets", "index.css")
 
 		// The codicon font from the React build output
 		// https://github.com/microsoft/vscode-extension-samples/blob/main/webview-codicons-sample/src/extension.ts
 		// we installed this package in the extension so that we can access it how its intended from the extension (the font file is likely bundled in vscode), and we just import the css fileinto our react app we don't have access to it
 		// don't forget to add font-src ${webview.cspSource};
-		const codiconsUrl = this.getExtensionUrl("node_modules", "@vscode", "codicons", "dist", "codicon.css")
+		const codiconsUrl = this.getExtensionUrlFor(getWebviewUrl, "node_modules", "@vscode", "codicons", "dist", "codicon.css")
 
 		// Use a nonce to only allow a specific script to be run.
 		/*
@@ -99,6 +107,9 @@ export abstract class WebviewProvider {
 				in meta tag we add nonce attribute: A cryptographic nonce (only used once) to allow scripts. The server must generate a unique nonce value each time it transmits a policy. It is critical to provide a nonce that cannot be guessed as bypassing a resource's policy is otherwise trivial.
 				*/
 		const nonce = getNonce()
+		const modeScript = webviewMode
+			? `<script nonce="${nonce}">window.__KOCODE_WEBVIEW_MODE__=${JSON.stringify(webviewMode)}</script>`
+			: ""
 
 		// Tip: Install the es6-string-html VS Code extension to enable code highlighting below
 		return /*html*/ `
@@ -112,15 +123,16 @@ export abstract class WebviewProvider {
 				<link href="${codiconsUrl}" rel="stylesheet" />
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none';
 					connect-src https://*.posthog.com https://*.cline.bot; 
-					font-src ${this.getCspSource()} data:; 
-					style-src ${this.getCspSource()} 'unsafe-inline'; 
-					img-src ${this.getCspSource()} https: data:; 
+					font-src ${cspSource} data:; 
+					style-src ${cspSource} 'unsafe-inline'; 
+					img-src ${cspSource} https: data:; 
 					script-src 'nonce-${nonce}' 'unsafe-eval';">
 				<title>Cline</title>
 			</head>
 			<body>
 				<noscript>You need to enable JavaScript to run this app.</noscript>
 				<div id="root"></div>
+				${modeScript}
 				<script type="module" nonce="${nonce}" src="${scriptUrl}"></script>
 				<script src="http://localhost:8097"></script> 
 			</body>
@@ -140,7 +152,7 @@ export abstract class WebviewProvider {
 
 		return readFile(portFilePath, "utf8")
 			.then((portFile) => {
-				const port = Number.parseInt(portFile.trim()) || DEFAULT_PORT
+				const port = Number.parseInt(portFile.trim(), 10) || DEFAULT_PORT
 				Logger.info(`[getDevServerPort] Using dev server port ${port} from .vite-port file`)
 
 				return port
@@ -160,7 +172,7 @@ export abstract class WebviewProvider {
 	 * @returns A template string literal containing the HTML that should be
 	 * rendered within the webview panel
 	 */
-	protected async getHMRHtmlContent(): Promise<string> {
+	protected async getHMRHtmlContent(webviewMode?: string): Promise<string> {
 		const localPort = await this.getDevServerPort()
 		const localServerUrl = `localhost:${localPort}`
 
@@ -181,6 +193,9 @@ export abstract class WebviewProvider {
 		}
 
 		const nonce = getNonce()
+		const modeScript = webviewMode
+			? `<script nonce="${nonce}">window.__KOCODE_WEBVIEW_MODE__=${JSON.stringify(webviewMode)}</script>`
+			: ""
 		const stylesUrl = this.getExtensionUrl("webview-ui", "build", "assets", "index.css")
 		const codiconsUrl = this.getExtensionUrl("node_modules", "@vscode", "codicons", "dist", "codicon.css")
 
@@ -220,6 +235,7 @@ export abstract class WebviewProvider {
 				</head>
 				<body>
 					<div id="root"></div>
+					${modeScript}
 					${reactRefresh}
 					<script type="module" src="${scriptUrl}"></script>
 				</body>
@@ -236,7 +252,11 @@ export abstract class WebviewProvider {
 	 * @returns A URL pointing to the file/resource
 	 */
 	private getExtensionUrl(...pathList: string[]): string {
+		return this.getExtensionUrlFor((assetPath) => this.getWebviewUrl(assetPath), ...pathList)
+	}
+
+	protected getExtensionUrlFor(getWebviewUrl: (assetPath: string) => string, ...pathList: string[]): string {
 		const assetPath = path.resolve(HostProvider.get().extensionFsPath, ...pathList)
-		return this.getWebviewUrl(assetPath)
+		return getWebviewUrl(assetPath)
 	}
 }

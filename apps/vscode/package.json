@@ -188,6 +188,12 @@
 				"category": "Kocode"
 			},
 			{
+				"command": "kocode.openWorkbench",
+				"title": "Open 作業メモ Workbench",
+				"category": "Kocode",
+				"icon": "$(book)"
+			},
+			{
 				"command": "cline.generateGitCommitMessage",
 				"title": "Generate Commit Message with Kocode",
 				"category": "Kocode",

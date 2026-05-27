@@ -1,5 +1,6 @@
 import { Controller } from "@core/controller/index"
 import { serviceHandlers } from "@generated/hosts/vscode/protobus-services"
+import { kocodeServiceHandlers } from "@core/kocode/service"
 import { GrpcRecorderBuilder } from "@/core/controller/grpc-recorder/grpc-recorder.builder"
 import { GrpcRequestRegistry } from "@/core/controller/grpc-request-registry"
 import { ExtensionMessage } from "@/shared/ExtensionMessage"
@@ -191,6 +192,14 @@ export function getRequestRegistry(): GrpcRequestRegistry {
 
 function getHandler(serviceName: string, methodName: string): any {
 	// Get the service handler from the config
+	if (serviceName === "cline.KocodeService") {
+		const handler = kocodeServiceHandlers[methodName as keyof typeof kocodeServiceHandlers]
+		if (!handler) {
+			throw new Error(`Unknown rpc: ${serviceName}.${methodName}`)
+		}
+		return handler
+	}
+
 	const serviceConfig = serviceHandlers[serviceName]
 	if (!serviceConfig) {
 		throw new Error(`Unknown service: ${serviceName}`)

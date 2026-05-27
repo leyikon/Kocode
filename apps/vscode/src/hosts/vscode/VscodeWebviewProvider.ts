@@ -1,7 +1,7 @@
 import { sendShowWebviewEvent } from "@core/controller/ui/subscribeToShowWebview"
 import { WebviewProvider } from "@core/webview"
 import * as vscode from "vscode"
-import { handleGrpcRequest, handleGrpcRequestCancel } from "@/core/controller/grpc-handler"
+import { handleGrpcRequest, handleGrpcRequestCancel, type PostMessageToWebview } from "@/core/controller/grpc-handler"
 import { HostProvider } from "@/hosts/host-provider"
 import { ExtensionRegistryInfo } from "@/registry"
 import type { ExtensionMessage } from "@/shared/ExtensionMessage"
@@ -19,6 +19,7 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 	public static readonly SIDEBAR_ID = ExtensionRegistryInfo.views.Sidebar
 
 	private webview?: vscode.WebviewView
+	private kocodeWorkbenchPanel?: vscode.WebviewPanel
 	private disposables: vscode.Disposable[] = []
 
 	override getWebviewUrl(path: string) {
@@ -42,6 +43,40 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 
 	public getWebview(): vscode.WebviewView | undefined {
 		return this.webview
+	}
+
+	public async openKocodeWorkbenchPanel(): Promise<void> {
+		if (this.kocodeWorkbenchPanel) {
+			this.kocodeWorkbenchPanel.reveal(vscode.ViewColumn.One)
+			return
+		}
+
+		this.kocodeWorkbenchPanel = vscode.window.createWebviewPanel(
+			"kocodeWorkbench",
+			"Kocode 作業メモ",
+			vscode.ViewColumn.One,
+			{
+				enableScripts: true,
+				localResourceRoots: [vscode.Uri.file(HostProvider.get().extensionFsPath)],
+				retainContextWhenHidden: true,
+			},
+		)
+
+		const panel = this.kocodeWorkbenchPanel
+		panel.webview.html = this.getHtmlContentForTarget(
+			(assetPath) => panel.webview.asWebviewUri(vscode.Uri.file(assetPath)).toString(),
+			panel.webview.cspSource,
+			"kocode-workbench",
+		)
+		this.setWebviewMessageListener(panel.webview)
+
+		panel.onDidDispose(
+			() => {
+				this.kocodeWorkbenchPanel = undefined
+			},
+			null,
+			this.disposables,
+		)
 	}
 
 	/**
@@ -101,7 +136,7 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 		// Listen for configuration changes
 		vscode.workspace.onDidChangeConfiguration(
 			async (e) => {
-				if (e && e.affectsConfiguration("cline.mcpMarketplace.enabled")) {
+				if (e?.affectsConfiguration("cline.mcpMarketplace.enabled")) {
 					// Update state when marketplace tab setting changes
 					await this.controller.postStateToWebview()
 				}
@@ -145,7 +180,7 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 	private setWebviewMessageListener(webview: vscode.Webview) {
 		webview.onDidReceiveMessage(
 			(message) => {
-				this.handleWebviewMessage(message)
+				this.handleWebviewMessage(message, (response) => webview.postMessage(response))
 			},
 			null,
 			this.disposables,
@@ -158,9 +193,10 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 	 *
 	 * @param webview A reference to the extension webview
 	 */
-	async handleWebviewMessage(message: WebviewMessage) {
-		const postMessageToWebview = (response: ExtensionMessage) => this.postMessageToWebview(response)
-
+	async handleWebviewMessage(
+		message: WebviewMessage,
+		postMessageToWebview: PostMessageToWebview = (response) => this.postMessageToWebview(response),
+	) {
 		switch (message.type) {
 			case "grpc_request": {
 				if (message.grpc_request) {

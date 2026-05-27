@@ -89,7 +89,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Initialize hook discovery cache for performance optimization
 	HookDiscoveryCache.getInstance().initialize(
-		context as any, // Adapt VSCode ExtensionContext to generic interface
+		context as unknown as { subscriptions: { dispose(): void }[] }, // Adapt VSCode ExtensionContext to generic interface
 		(dir: string) => {
 			try {
 				const pattern = new vscode.RelativePattern(dir, "*")
@@ -137,6 +137,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand(commands.HistoryButton, () => sendHistoryButtonClickedEvent()))
 	context.subscriptions.push(vscode.commands.registerCommand(commands.AccountButton, () => sendAccountButtonClickedEvent()))
 	context.subscriptions.push(vscode.commands.registerCommand(commands.WorktreesButton, () => sendWorktreesButtonClickedEvent()))
+	context.subscriptions.push(vscode.commands.registerCommand("kocode.openWorkbench", () => webview.openKocodeWorkbenchPanel()))
 
 	/*
 	We use the text document content provider API to show the left side for diff view by creating a
@@ -192,7 +193,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				Logger.log("[Cline Dev] Dev mode activated & dev commands registered")
 			})
 			.catch((error) => {
-				Logger.log("[Cline Dev] Failed to register dev commands: " + error)
+				Logger.log(`[Cline Dev] Failed to register dev commands: ${error}`)
 			})
 	}
 
@@ -746,6 +747,6 @@ async function cleanupLegacyVSCodeStorage(context: ExtensionContext): Promise<vo
 
 		Logger.info("[VS Code Storage Migrations] Completed")
 	} catch (error) {
-		Logger.warn("[VS Code Storage Migrations] Failed" + (error instanceof Error ? `: ${error.message}` : ""))
+		Logger.warn(`[VS Code Storage Migrations] Failed${error instanceof Error ? `: ${error.message}` : ""}`)
 	}
 }

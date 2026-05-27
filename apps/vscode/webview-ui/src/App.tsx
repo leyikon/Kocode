@@ -4,6 +4,7 @@ import AccountView from "./components/account/AccountView"
 import ChatView from "./components/chat/ChatView"
 import HistoryView from "./components/history/HistoryView"
 import KocodeChatView from "./components/kocode/KocodeChatView"
+import KocodeWorkbenchView from "./components/kocode/workbench/KocodeWorkbenchView"
 import McpView from "./components/mcp/configuration/McpConfigurationView"
 import OnboardingView from "./components/onboarding/OnboardingView"
 import SettingsView from "./components/settings/SettingsView"
@@ -14,6 +15,7 @@ import { Providers } from "./Providers"
 import { UiServiceClient } from "./services/grpc-client"
 
 const AppContent = () => {
+	const webviewMode = (window as Window & { __KOCODE_WEBVIEW_MODE__?: string }).__KOCODE_WEBVIEW_MODE__
 	const [chatExperience, setChatExperience] = useState<"kocode" | "legacy">("kocode")
 	const {
 		didHydrateState,
@@ -57,6 +59,10 @@ const AppContent = () => {
 		}
 		showUpdateAnnouncementModal()
 	}, [didHydrateState, showWelcome, shouldShowAnnouncement, showAnnouncement, showUpdateAnnouncementModal])
+
+	if (webviewMode === "kocode-workbench") {
+		return <KocodeWorkbenchView />
+	}
 
 	if (!didHydrateState) {
 		return null

@@ -1,33 +1,25 @@
-import { combineApiRequests } from "@shared/combineApiRequests"
-import { combineCommandSequences } from "@shared/combineCommandSequences"
-import { combineErrorRetryMessages } from "@shared/combineErrorRetryMessages"
-import { combineHookSequences } from "@shared/combineHookSequences"
-import type { ClineMessage } from "@shared/ExtensionMessage"
-import { BooleanRequest } from "@shared/proto/cline/common"
-import { MenuIcon, PlusIcon, SendIcon, SettingsIcon } from "lucide-react"
-import { useCallback, useEffect, useMemo } from "react"
+import type { KocodeChatMessage, KocodeEvent } from "@shared/kocode"
+import { BooleanRequest, EmptyRequest } from "@shared/proto/cline/common"
+import { BookOpenIcon, MenuIcon, PlusIcon, SendIcon, SettingsIcon } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useMount } from "react-use"
 import { Virtuoso } from "react-virtuoso"
 import kokoAvatar from "@/assets/kocode/koko-avatar.png"
 import kokoBanner from "@/assets/kocode/koko-banner.png"
-import { MarkdownRow } from "@/components/chat/MarkdownRow"
-import UserMessage from "@/components/chat/UserMessage"
 import {
 	ActionButtons,
 	CHAT_CONSTANTS,
 	ChatLayout,
-	filterVisibleMessages,
-	groupLowStakesTools,
-	groupMessages,
 	InputSection,
 	useChatState,
 	useMessageHandlers,
 	useScrollBehavior,
 } from "@/components/chat/chat-view"
-import { MessageRenderer } from "@/components/chat/chat-view/components/messages/MessageRenderer"
+import { MarkdownRow } from "@/components/chat/MarkdownRow"
 import { normalizeApiConfiguration } from "@/components/settings/utils/providerUtils"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { FileServiceClient, UiServiceClient } from "@/services/grpc-client"
+import { KocodeServiceClient } from "@/services/kocode-client"
 import "./KocodeChatView.css"
 
 interface KocodeChatViewProps {
@@ -36,7 +28,6 @@ interface KocodeChatViewProps {
 }
 
 const MAX_ATTACHMENTS = CHAT_CONSTANTS.MAX_IMAGES_AND_FILES_PER_MESSAGE
-const WAITING_MESSAGE_TS = Number.MIN_SAFE_INTEGER
 
 const formatTime = (timestamp: number) =>
 	new Date(timestamp).toLocaleTimeString("ja-JP", {
@@ -44,7 +35,15 @@ const formatTime = (timestamp: number) =>
 		minute: "2-digit",
 	})
 
-const KocodeHeader = ({ onOpenLegacy, onOpenSettings }: { onOpenLegacy: () => void; onOpenSettings: () => void }) => (
+const KocodeHeader = ({
+	onOpenLegacy,
+	onOpenSettings,
+	onOpenWorkbench,
+}: {
+	onOpenLegacy: () => void
+	onOpenSettings: () => void
+	onOpenWorkbench: () => void
+}) => (
 	<header className="kocode-topbar">
 		<button aria-label="以前の画面を開く" className="kocode-icon-button" onClick={onOpenLegacy} type="button">
 			<MenuIcon size={21} />
@@ -53,6 +52,9 @@ const KocodeHeader = ({ onOpenLegacy, onOpenSettings }: { onOpenLegacy: () => vo
 			<span aria-hidden>♡</span>
 			<strong>Kocode / ココーデ</strong>
 		</div>
+		<button aria-label="作業メモを開く" className="kocode-icon-button" onClick={onOpenWorkbench} type="button">
+			<BookOpenIcon size={20} />
+		</button>
 		<button aria-label="設定" className="kocode-icon-button" onClick={onOpenSettings} type="button">
 			<SettingsIcon size={20} />
 		</button>
@@ -64,7 +66,7 @@ const KocodeHero = () => (
 		<img alt="ここちゃん" className="kocode-hero-art" src={kokoBanner} />
 		<div className="kocode-hero-copy">
 			<h1>
-				ここちゃん<span> paw</span>
+				ここちゃん<span>♡</span>
 			</h1>
 			<p>
 				なんでも気軽に
@@ -118,96 +120,27 @@ const KocodeEmptyChat = () => (
 	</div>
 )
 
-interface KocodeMessageItemProps {
-	item: ClineMessage | ClineMessage[]
-	index: number
-	rows: (ClineMessage | ClineMessage[])[]
-	modifiedMessages: ClineMessage[]
-	chatState: ReturnType<typeof useChatState>
-	messageHandlers: ReturnType<typeof useMessageHandlers>
-	scrollBehavior: ReturnType<typeof useScrollBehavior>
-}
-
-const KocodeMessageItem = ({
-	item,
-	index,
-	rows,
-	modifiedMessages,
-	chatState,
-	messageHandlers,
-	scrollBehavior,
-}: KocodeMessageItemProps) => {
-	if (!Array.isArray(item) && item.ts === WAITING_MESSAGE_TS) {
-		return <AssistantBubble>考えているにゃ...</AssistantBubble>
-	}
-
-	if (!Array.isArray(item) && item.type === "say" && item.say === "task") {
-		return <UserBubble timestamp={item.ts}>{item.text}</UserBubble>
-	}
-
-	if (!Array.isArray(item) && item.type === "say" && item.say === "user_feedback") {
-		return (
-			<UserBubble timestamp={item.ts}>
-				<UserMessage
-					files={item.files}
-					images={item.images}
-					messageTs={item.ts}
-					sendMessageFromChatRow={messageHandlers.handleSendMessage}
-					text={item.text}
-				/>
-			</UserBubble>
-		)
-	}
-
-	if (!Array.isArray(item) && item.type === "say" && item.say === "text") {
-		return (
-			<AssistantBubble timestamp={item.ts}>
-				<MarkdownRow markdown={item.text} />
-			</AssistantBubble>
-		)
+const KocodeChatMessageItem = ({ message }: { message: KocodeChatMessage }) => {
+	if (message.author === "user") {
+		return <UserBubble timestamp={message.ts}>{message.text}</UserBubble>
 	}
 
 	return (
-		<AssistantBubble timestamp={Array.isArray(item) ? item[0]?.ts : item.ts}>
-			<div className="kocode-embedded-card">
-				<MessageRenderer
-					expandedRows={chatState.expandedRows}
-					footerActive={false}
-					groupedMessages={rows}
-					index={index}
-					inputValue={chatState.inputValue}
-					messageHandlers={messageHandlers}
-					messageOrGroup={item}
-					modifiedMessages={modifiedMessages}
-					onHeightChange={scrollBehavior.handleRowHeightChange}
-					onSetQuote={chatState.setActiveQuote}
-					onToggleExpand={scrollBehavior.toggleRowExpansion}
-				/>
-			</div>
+		<AssistantBubble timestamp={message.ts}>
+			<MarkdownRow markdown={message.text} />
 		</AssistantBubble>
 	)
 }
 
 const KocodeChatView = ({ isHidden, onOpenLegacy }: KocodeChatViewProps) => {
-	const { apiConfiguration, clineMessages: messages, hooksEnabled, mode, navigateToSettings } = useExtensionState()
+	const { apiConfiguration, clineMessages: messages, mode, navigateToSettings } = useExtensionState()
+	const [kocodeMessages, setKocodeMessages] = useState<KocodeChatMessage[]>([])
 	const task = useMemo(() => messages.at(0), [messages])
-	const modifiedMessages = useMemo(() => {
-		const afterTask = messages.slice(1)
-		const withHooks = hooksEnabled ? combineHookSequences(afterTask) : afterTask
-		return combineErrorRetryMessages(combineApiRequests(combineCommandSequences(withHooks)))
-	}, [hooksEnabled, messages])
-	const visibleMessages = useMemo(() => filterVisibleMessages(modifiedMessages), [modifiedMessages])
-	const groupedMessages = useMemo(() => groupLowStakesTools(groupMessages(visibleMessages)), [visibleMessages])
 
 	const chatState = useChatState(messages)
+	const setChatInputValue = chatState.setInputValue
 	const messageHandlers = useMessageHandlers(messages, chatState)
-	const scrollBehavior = useScrollBehavior(
-		messages,
-		visibleMessages,
-		groupedMessages,
-		chatState.expandedRows,
-		chatState.setExpandedRows,
-	)
+	const scrollBehavior = useScrollBehavior(messages, [], [], chatState.expandedRows, chatState.setExpandedRows)
 	const { selectedModelInfo } = useMemo(() => normalizeApiConfiguration(apiConfiguration, mode), [apiConfiguration, mode])
 
 	const selectFilesAndImages = useCallback(async () => {
@@ -221,6 +154,62 @@ const KocodeChatView = ({ isHidden, onOpenLegacy }: KocodeChatViewProps) => {
 		chatState.setSelectedImages((previous) => [...previous, ...imagesToAdd])
 		chatState.setSelectedFiles((previous) => [...previous, ...filesToAdd])
 	}, [chatState, selectedModelInfo.supportsImages])
+
+	const handleKocodeSendMessage = useCallback(
+		async (text: string, images: string[], files: string[]) => {
+			const messageToSend = text.trim()
+			if (!messageToSend && images.length === 0 && files.length === 0) {
+				return
+			}
+
+			await KocodeServiceClient.sendUserMessage({
+				text: messageToSend,
+				images,
+				files,
+			})
+
+			chatState.setInputValue("")
+			chatState.setActiveQuote(null)
+			chatState.setSelectedImages([])
+			chatState.setSelectedFiles([])
+			chatState.setSendingDisabled(false)
+			chatState.setEnableButtons(true)
+		},
+		[chatState],
+	)
+
+	const kocodeMessageHandlers = useMemo(
+		() => ({
+			...messageHandlers,
+			handleSendMessage: handleKocodeSendMessage,
+		}),
+		[handleKocodeSendMessage, messageHandlers],
+	)
+
+	useEffect(() => {
+		KocodeServiceClient.getKocodeSession(EmptyRequest.create({}))
+			.then((session) => {
+				setKocodeMessages(session.messages)
+			})
+			.catch(console.error)
+
+		const cleanup = KocodeServiceClient.subscribeToKocodeEvents(EmptyRequest.create({}), {
+			onResponse: (event: KocodeEvent) => {
+				if (event.type === "user_message" || event.type === "flash_message") {
+					setKocodeMessages((previous) => {
+						if (previous.some((message) => message.id === event.message.id)) {
+							return previous
+						}
+						return [...previous, event.message]
+					})
+				}
+			},
+			onError: console.error,
+			onComplete: () => undefined,
+		})
+
+		return cleanup
+	}, [])
 
 	useEffect(() => {
 		const cleanup = UiServiceClient.subscribeToShowWebview(
@@ -244,7 +233,7 @@ const KocodeChatView = ({ isHidden, onOpenLegacy }: KocodeChatViewProps) => {
 			{
 				onResponse: (event) => {
 					if (event.value) {
-						chatState.setInputValue((previous) => (previous ? `${previous}\n${event.value}\n` : `${event.value}\n`))
+						setChatInputValue((previous) => (previous ? `${previous}\n${event.value}\n` : `${event.value}\n`))
 					}
 				},
 				onError: console.error,
@@ -252,60 +241,30 @@ const KocodeChatView = ({ isHidden, onOpenLegacy }: KocodeChatViewProps) => {
 			},
 		)
 		return cleanup
-	}, [chatState.setInputValue])
+	}, [setChatInputValue])
 
 	useMount(() => chatState.textAreaRef.current?.focus())
-
-	const waitingForKoko = useMemo(() => {
-		const last = messages.at(-1)
-		return (
-			!!task && (messages.length === 1 || (last?.type === "say" && last.say === "api_req_started" && last.partial === true))
-		)
-	}, [messages, task])
-
-	const rows = useMemo<(ClineMessage | ClineMessage[])[]>(() => {
-		if (!task) {
-			return []
-		}
-		const conversation: (ClineMessage | ClineMessage[])[] = [task, ...groupedMessages]
-		if (waitingForKoko) {
-			conversation.push({
-				partial: true,
-				say: "reasoning",
-				text: "",
-				ts: WAITING_MESSAGE_TS,
-				type: "say",
-			})
-		}
-		return conversation
-	}, [groupedMessages, task, waitingForKoko])
 
 	const attachmentsDisabled = chatState.selectedImages.length + chatState.selectedFiles.length >= MAX_ATTACHMENTS
 
 	return (
 		<ChatLayout isHidden={isHidden}>
 			<main className="kocode-view">
-				<KocodeHeader onOpenLegacy={onOpenLegacy} onOpenSettings={() => navigateToSettings()} />
+				<KocodeHeader
+					onOpenLegacy={onOpenLegacy}
+					onOpenSettings={() => navigateToSettings()}
+					onOpenWorkbench={() => void KocodeServiceClient.openWorkbench(EmptyRequest.create({}))}
+				/>
 				<KocodeHero />
 				<section className="kocode-conversation">
-					{task ? (
+					{kocodeMessages.length > 0 ? (
 						<Virtuoso
 							atBottomStateChange={scrollBehavior.setIsAtBottom}
 							className="kocode-thread scrollable"
-							data={rows}
-							initialTopMostItemIndex={rows.length - 1}
-							itemContent={(index, item) => (
-								<KocodeMessageItem
-									chatState={chatState}
-									index={index}
-									item={item}
-									messageHandlers={messageHandlers}
-									modifiedMessages={modifiedMessages}
-									rows={rows}
-									scrollBehavior={scrollBehavior}
-								/>
-							)}
-							key={task.ts}
+							data={kocodeMessages}
+							initialTopMostItemIndex={kocodeMessages.length - 1}
+							itemContent={(_, item) => <KocodeChatMessageItem message={item} />}
+							key="kocode-thread"
 							ref={scrollBehavior.virtuosoRef}
 						/>
 					) : (
@@ -334,7 +293,7 @@ const KocodeChatView = ({ isHidden, onOpenLegacy }: KocodeChatViewProps) => {
 					<div className="kocode-composer">
 						<InputSection
 							chatState={chatState}
-							messageHandlers={messageHandlers}
+							messageHandlers={kocodeMessageHandlers}
 							placeholderText="ここちゃんにメッセージを送る..."
 							scrollBehavior={scrollBehavior}
 							selectFilesAndImages={selectFilesAndImages}
@@ -346,11 +305,7 @@ const KocodeChatView = ({ isHidden, onOpenLegacy }: KocodeChatViewProps) => {
 						aria-label="送信"
 						className="kocode-compose-action kocode-send-ornament"
 						onClick={() =>
-							void messageHandlers.handleSendMessage(
-								chatState.inputValue,
-								chatState.selectedImages,
-								chatState.selectedFiles,
-							)
+							void handleKocodeSendMessage(chatState.inputValue, chatState.selectedImages, chatState.selectedFiles)
 						}
 						type="button">
 						<SendIcon size={21} />
