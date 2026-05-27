@@ -3,7 +3,7 @@ import { shouldSkipReasoningForModel } from "@utils/model-utils"
 import axios from "axios"
 import OpenAI from "openai"
 import type { ChatCompletionTool as OpenAITool } from "openai/resources/chat/completions"
-import { ClineEnv } from "@/config"
+import { ClineEnv, Environment } from "@/config"
 import { refreshClineRecommendedModels } from "@/core/controller/models/refreshClineRecommendedModels"
 import { ClineAccountService } from "@/services/account/ClineAccountService"
 import { AuthService } from "@/services/auth/AuthService"
@@ -79,7 +79,10 @@ export class ClineHandler implements ApiHandler {
 	}
 
 	private async ensureClient(): Promise<OpenAI> {
-		const clineAccountAuthToken = this.options.clineApiKey || (await this._authService.getAuthToken())
+		let clineAccountAuthToken = this.options.clineApiKey || (await this._authService.getAuthToken())
+		if (!clineAccountAuthToken && ClineEnv.config().environment === Environment.selfHosted) {
+			clineAccountAuthToken = "kocode-direct-dev"
+		}
 		if (!clineAccountAuthToken) {
 			throw new Error(CLINE_ACCOUNT_AUTH_ERROR_MESSAGE)
 		}
@@ -275,7 +278,10 @@ export class ClineHandler implements ApiHandler {
 		if (this.lastGenerationId) {
 			try {
 				const resolvedFreeModelIds = freeModelIds || (await this.getFreeModelIdSet())
-				const clineAccountAuthToken = await this._authService.getAuthToken()
+				let clineAccountAuthToken = await this._authService.getAuthToken()
+				if (!clineAccountAuthToken && ClineEnv.config().environment === Environment.selfHosted) {
+					clineAccountAuthToken = "kocode-direct-dev"
+				}
 				if (!clineAccountAuthToken) {
 					throw new Error(CLINE_ACCOUNT_AUTH_ERROR_MESSAGE)
 				}

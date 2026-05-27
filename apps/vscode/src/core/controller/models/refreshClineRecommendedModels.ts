@@ -2,7 +2,7 @@ import { ensureCacheDirectoryExists, GlobalFileNames } from "@core/storage/disk"
 import axios from "axios"
 import fs from "fs/promises"
 import path from "path"
-import { ClineEnv } from "@/config"
+import { ClineEnv, Environment } from "@/config"
 import { featureFlagsService } from "@/services/feature-flags"
 import { CLINE_RECOMMENDED_MODELS_FALLBACK } from "@/shared/cline/recommended-models"
 import { getAxiosSettings } from "@/shared/net"
@@ -31,7 +31,10 @@ function getHardcodedRecommendedModels(): ClineRecommendedModelsData {
 }
 
 function useUpstreamRecommendedModels(): boolean {
-	return featureFlagsService.getBooleanFlagEnabled(FeatureFlag.CLINE_RECOMMENDED_MODELS_UPSTREAM)
+	return (
+		ClineEnv.config().environment === Environment.selfHosted ||
+		featureFlagsService.getBooleanFlagEnabled(FeatureFlag.CLINE_RECOMMENDED_MODELS_UPSTREAM)
+	)
 }
 
 function normalizeRecommendedModel(raw: unknown): ClineRecommendedModelData | null {

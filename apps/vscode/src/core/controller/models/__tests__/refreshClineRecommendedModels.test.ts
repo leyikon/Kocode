@@ -19,6 +19,12 @@ describe("refreshClineRecommendedModels", () => {
 		resetClineRecommendedModelsCacheForTests()
 		sandbox.stub(Logger, "log")
 		sandbox.stub(Logger, "error")
+		sandbox.stub(ClineEnv, "config").returns({
+			environment: Environment.production,
+			appBaseUrl: "https://app.cline-mock.bot",
+			apiBaseUrl: "https://api.cline-mock.bot",
+			mcpBaseUrl: "https://api.cline-mock.bot/v1/mcp",
+		})
 	})
 
 	afterEach(() => {
@@ -39,12 +45,6 @@ describe("refreshClineRecommendedModels", () => {
 	it("fetches from upstream when rollout flag is on", async () => {
 		sandbox.stub(getFeatureFlagsService(), "getBooleanFlagEnabled").callsFake((flag) => {
 			return flag === FeatureFlag.CLINE_RECOMMENDED_MODELS_UPSTREAM
-		})
-		sandbox.stub(ClineEnv, "config").returns({
-			environment: Environment.production,
-			appBaseUrl: "https://app.cline-mock.bot",
-			apiBaseUrl: "https://api.cline-mock.bot",
-			mcpBaseUrl: "https://api.cline-mock.bot/v1/mcp",
 		})
 		sandbox.stub(disk, "ensureCacheDirectoryExists").resolves("/tmp")
 		sandbox.stub(fs, "writeFile").resolves()
@@ -82,12 +82,6 @@ describe("refreshClineRecommendedModels", () => {
 		const flagStub = sandbox.stub(getFeatureFlagsService(), "getBooleanFlagEnabled")
 		flagStub.onFirstCall().returns(true)
 		flagStub.onSecondCall().returns(false)
-		sandbox.stub(ClineEnv, "config").returns({
-			environment: Environment.production,
-			appBaseUrl: "https://app.cline-mock.bot",
-			apiBaseUrl: "https://api.cline-mock.bot",
-			mcpBaseUrl: "https://api.cline-mock.bot/v1/mcp",
-		})
 		sandbox.stub(disk, "ensureCacheDirectoryExists").resolves("/tmp")
 		sandbox.stub(fs, "writeFile").resolves()
 		const axiosGetStub = sandbox.stub(axios, "get").resolves({
@@ -103,5 +97,28 @@ describe("refreshClineRecommendedModels", () => {
 		expect(axiosGetStub.calledOnce).to.equal(true)
 		expect(firstResult).to.not.deep.equal(CLINE_RECOMMENDED_MODELS_FALLBACK)
 		expect(secondResult).to.deep.equal(CLINE_RECOMMENDED_MODELS_FALLBACK)
+	})
+
+	it("fetches from the configured relay in self-hosted mode without a rollout flag", async () => {
+		sandbox.stub(getFeatureFlagsService(), "getBooleanFlagEnabled").returns(false)
+		;(ClineEnv.config as sinon.SinonStub).returns({
+			environment: Environment.selfHosted,
+			appBaseUrl: "https://app.kocode.example",
+			apiBaseUrl: "https://api.kocode.example",
+			mcpBaseUrl: "https://api.kocode.example/v1/mcp",
+		})
+		sandbox.stub(disk, "ensureCacheDirectoryExists").resolves("/tmp")
+		sandbox.stub(fs, "writeFile").resolves()
+		const axiosGetStub = sandbox.stub(axios, "get").resolves({
+			data: {
+				recommended: [{ id: "deepseek-v4-pro", name: "Kocode Pro", description: "", tags: [] }],
+				free: [],
+			},
+		})
+
+		const result = await refreshClineRecommendedModels()
+
+		expect(axiosGetStub.calledOnceWith("https://api.kocode.example/api/v1/ai/cline/recommended-models")).to.equal(true)
+		expect(result.recommended[0]?.name).to.equal("Kocode Pro")
 	})
 })

@@ -6,7 +6,7 @@ import axios from "axios"
 import cloneDeep from "clone-deep"
 import fs from "fs/promises"
 import path from "path"
-import { ClineEnv } from "@/config"
+import { ClineEnv, Environment } from "@/config"
 import { StateManager } from "@/core/storage/StateManager"
 import { featureFlagsService } from "@/services/feature-flags"
 import {
@@ -102,7 +102,9 @@ async function fetchRawClineModels(): Promise<ClineRawModelInfo[]> {
  * @returns Record of model ID to ModelInfo (application types)
  */
 export async function refreshClineModels(controller: Controller): Promise<Record<string, ModelInfo>> {
-	const shouldUseClineEndpointSource = featureFlagsService.getBooleanFlagEnabled(FeatureFlag.EXTENSION_CLINE_MODELS_ENDPOINT)
+	const shouldUseClineEndpointSource =
+		ClineEnv.config().environment === Environment.selfHosted ||
+		featureFlagsService.getBooleanFlagEnabled(FeatureFlag.EXTENSION_CLINE_MODELS_ENDPOINT)
 	if (!shouldUseClineEndpointSource) {
 		return refreshOpenRouterModels(controller)
 	}
