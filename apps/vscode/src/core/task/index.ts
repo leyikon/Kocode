@@ -743,13 +743,15 @@ export class Task {
 				this.taskState.askResponseFiles = undefined
 				askTs = Date.now()
 				this.taskState.lastMessageTs = askTs
-				await this.messageStateHandler.addToClineMessages({
+				const message: ClineMessage = {
 					ts: askTs,
 					type: "ask",
 					ask: type,
 					text,
-				})
+				}
+				await this.messageStateHandler.addToClineMessages(message)
 				await this.postStateToWebview()
+				await this.emitKocodeCompletionEvent(message)
 			}
 		} else {
 			// this is a new non-partial message, so add it like normal
@@ -760,13 +762,15 @@ export class Task {
 			this.taskState.askResponseFiles = undefined
 			askTs = Date.now()
 			this.taskState.lastMessageTs = askTs
-			await this.messageStateHandler.addToClineMessages({
+			const message: ClineMessage = {
 				ts: askTs,
 				type: "ask",
 				ask: type,
 				text,
-			})
+			}
+			await this.messageStateHandler.addToClineMessages(message)
 			await this.postStateToWebview()
+			await this.emitKocodeCompletionEvent(message)
 		}
 
 		if (type !== "command_output") {
@@ -821,6 +825,18 @@ export class Task {
 		this.taskState.askResponseText = text
 		this.taskState.askResponseImages = images
 		this.taskState.askResponseFiles = files
+	}
+
+	private async emitKocodeCompletionEvent(message: ClineMessage): Promise<void> {
+		const isCompletionResult =
+			(message.type === "say" && message.say === "completion_result") ||
+			(message.type === "ask" && message.ask === "completion_result")
+
+		if (!isCompletionResult || message.partial) {
+			return
+		}
+
+		await sendPartialMessageEvent(convertClineMessageToProto(message))
 	}
 
 	async say(
@@ -898,7 +914,7 @@ export class Task {
 			// this is a new partial=false message, so add it like normal
 			const sayTs = Date.now()
 			this.taskState.lastMessageTs = sayTs
-			await this.messageStateHandler.addToClineMessages({
+			const message: ClineMessage = {
 				ts: sayTs,
 				type: "say",
 				say: type,
@@ -906,14 +922,16 @@ export class Task {
 				images,
 				files,
 				modelInfo,
-			})
+			}
+			await this.messageStateHandler.addToClineMessages(message)
 			await this.postStateToWebview()
+			await this.emitKocodeCompletionEvent(message)
 			return sayTs
 		}
 		// this is a new non-partial message, so add it like normal
 		const sayTs = Date.now()
 		this.taskState.lastMessageTs = sayTs
-		await this.messageStateHandler.addToClineMessages({
+		const message: ClineMessage = {
 			ts: sayTs,
 			type: "say",
 			say: type,
@@ -921,8 +939,10 @@ export class Task {
 			images,
 			files,
 			modelInfo,
-		})
+		}
+		await this.messageStateHandler.addToClineMessages(message)
 		await this.postStateToWebview()
+		await this.emitKocodeCompletionEvent(message)
 		return sayTs
 	}
 

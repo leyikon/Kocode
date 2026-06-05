@@ -1,5 +1,13 @@
 import type { KocodeTaskMode, TaskSpec, TaskSpecPatch } from "@shared/kocode"
 
+export interface TaskSpecDraft {
+	goal: string
+	mode?: KocodeTaskMode | null
+	files?: string[]
+	constraints?: string[]
+	acceptanceCriteria?: string[]
+}
+
 const TASK_KEYWORDS = [
 	"实现",
 	"修改",
@@ -32,28 +40,71 @@ export class TaskSpecManager {
 	}
 
 	ensureTaskSpec(text: string, sourceMessageId: string, files: string[] = []): TaskSpec {
+		return this.ensureTaskSpecFromDraft({ goal: text, files }, sourceMessageId)
+	}
+
+	/**
+	 * Always creates a brand-new TaskSpec, archiving any current one regardless of status.
+	 * Used when Flash classifies the input as `new_task` — the user wants a clean slate.
+	 */
+	startFreshTask(draft: TaskSpecDraft, _sourceMessageId: string): TaskSpec {
+		const goal = draft.goal.trim()
+		const files = draft.files ?? []
+		this.taskSpec = {
+			id: `${Date.now()}`,
+			goal,
+			mode: draft.mode ?? this.inferMode(goal),
+			status: "draft",
+			files: [...files],
+			constraints: [...(draft.constraints ?? [])],
+			acceptedDecisions: [],
+			rejectedDirections: [],
+			pendingPatches: [],
+			acceptanceCriteria:
+				draft.acceptanceCriteria && draft.acceptanceCriteria.length > 0
+					? [...draft.acceptanceCriteria]
+					: ["满足用户当前明确提出的目标", "不把闲聊内容加入 Worker 上下文"],
+		}
+		return this.taskSpec
+	}
+
+	ensureTaskSpecFromDraft(draft: TaskSpecDraft, sourceMessageId: string): TaskSpec {
+		const goal = draft.goal.trim()
+		const files = draft.files ?? []
 		if (!this.taskSpec || this.taskSpec.status === "completed" || this.taskSpec.status === "cancelled") {
 			this.taskSpec = {
 				id: `${Date.now()}`,
-				goal: text.trim(),
-				mode: this.inferMode(text),
+				goal,
+				mode: draft.mode ?? this.inferMode(goal),
 				status: "draft",
 				files: [...files],
-				constraints: [],
+				constraints: [...(draft.constraints ?? [])],
 				acceptedDecisions: [],
 				rejectedDirections: [],
 				pendingPatches: [],
-				acceptanceCriteria: ["满足用户当前明确提出的目标", "不把闲聊内容加入 Worker 上下文"],
+				acceptanceCriteria:
+					draft.acceptanceCriteria && draft.acceptanceCriteria.length > 0
+						? [...draft.acceptanceCriteria]
+						: ["满足用户当前明确提出的目标", "不把闲聊内容加入 Worker 上下文"],
 			}
 			return this.taskSpec
 		}
 
 		this.applyPatch({
 			kind: "add_constraint",
-			text,
+			text: goal,
 			sourceMessageId,
 			createdAt: Date.now(),
 		})
+
+		for (const constraint of draft.constraints ?? []) {
+			this.applyPatch({
+				kind: "add_constraint",
+				text: constraint,
+				sourceMessageId,
+				createdAt: Date.now(),
+			})
+		}
 
 		for (const file of files) {
 			this.applyPatch({
@@ -107,12 +158,12 @@ export class TaskSpecManager {
 				this.taskSpec.status = "cancelled"
 				break
 			case "request_replan":
-				this.addUnique(this.taskSpec.pendingPatches, patch)
+				this.addPatchUnique(this.taskSpec.pendingPatches, patch)
 				break
 		}
 
 		if (patch.kind !== "request_replan") {
-			this.addUnique(this.taskSpec.pendingPatches, patch)
+			this.addPatchUnique(this.taskSpec.pendingPatches, patch)
 		}
 
 		return this.taskSpec
@@ -135,6 +186,13 @@ export class TaskSpecManager {
 	markCancelled(): TaskSpec | undefined {
 		if (this.taskSpec) {
 			this.taskSpec.status = "cancelled"
+		}
+		return this.taskSpec
+	}
+
+	markCompleted(): TaskSpec | undefined {
+		if (this.taskSpec) {
+			this.taskSpec.status = "completed"
 		}
 		return this.taskSpec
 	}
@@ -164,6 +222,12 @@ export class TaskSpecManager {
 		const key = JSON.stringify(item)
 		if (!items.some((candidate) => JSON.stringify(candidate) === key)) {
 			items.push(item)
+		}
+	}
+
+	private addPatchUnique(items: TaskSpecPatch[], patch: TaskSpecPatch): void {
+		if (!items.some((candidate) => candidate.kind === patch.kind && candidate.text === patch.text)) {
+			items.push(patch)
 		}
 	}
 }

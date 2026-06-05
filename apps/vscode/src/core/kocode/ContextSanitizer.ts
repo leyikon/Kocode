@@ -1,6 +1,10 @@
 import type { ClineMessage } from "@shared/ExtensionMessage"
 import type { TaskSpec, WorkerDigest } from "@shared/kocode"
 
+function isCompletionMessage(message: ClineMessage): boolean {
+	return !message.partial && (message.say === "completion_result" || message.ask === "completion_result")
+}
+
 export class ContextSanitizer {
 	toWorkerPrompt(taskSpec: TaskSpec): string {
 		const files = taskSpec.files.length > 0 ? taskSpec.files.map((file) => `- ${file}`).join("\n") : "- 未指定"
@@ -14,6 +18,10 @@ export class ContextSanitizer {
 			taskSpec.acceptanceCriteria.length > 0
 				? taskSpec.acceptanceCriteria.map((criterion) => `- ${criterion}`).join("\n")
 				: "- ユーザーの明示した目的を満たす"
+		const pending =
+			taskSpec.pendingPatches.length > 0
+				? taskSpec.pendingPatches.map((patch) => `- ${patch.kind}: ${patch.text}`).join("\n")
+				: "- なし"
 
 		return [
 			"# Kocode Worker Task",
@@ -21,17 +29,31 @@ export class ContextSanitizer {
 			"あなたは Kocode の Worker Agent です。既存の Cline と同じように、必要な調査・編集・検証を行ってください。",
 			"ただし、この依頼は Flash Agent が会話から抽出した TaskSpec です。雑談やキャラクター口調は Worker の判断材料にしないでください。",
 			"",
+			"## Audience",
+			"このユーザーは「初めて vibe coding する新人」です。専門用語ベースの提案やフレームワーク選定の質問は、まず一行のやさしい言い換えを添えてください。",
+			"",
+			"## Newbie-Mode Operating Rules",
+			"- 破壊的なシェルコマンド（rm / mv / git reset --hard / DB drop / 大量ファイル削除など）は必ず requires_approval=true で出し、簡潔な日本語で「何を消すか・元に戻せるか」を 1 行で説明してください。",
+			"- 不可逆操作は、ユーザーが明示確認するまで実行しないでください。",
+			"- 1 タスクごと、または大きな編集ごとに、attempt_completion ではなく短い進捗メッセージ（1〜2 文・専門用語なし）で「いま何をしたか」を伝えてください。",
+			"- まだ動かしていない / 確認していないことを「できた」「直った」と書かないでください。完了主張の前に、可能なら lint / test / dev server / 簡単な smoke check のいずれかを必ず実行してください。",
+			"- TaskSpec で明示されたファイル以外を大きく書き換える前に、ask_followup_question で確認してください。",
+			"- ユーザーがまだ知らない概念（例: SSR, Hydration, OAuth）に触れる時は、コード前に 1 行の砕けた説明を添えてください。",
+			"- attempt_completion では、ユーザーが「次に何を見ればよいか」を 1 行だけ案内してください（例: ブラウザで /login を開いてみて）。",
+			"",
 			`## Goal\n${taskSpec.goal}`,
 			`## Mode\n${taskSpec.mode}`,
 			`## Files\n${files}`,
 			`## Constraints\n${constraints}`,
 			`## Rejected Directions\n${rejected}`,
+			`## Pending Revisions\n${pending}`,
 			`## Acceptance Criteria\n${criteria}`,
 		].join("\n")
 	}
 
 	toDigestFromMessage(message: ClineMessage, taskId?: string): WorkerDigest {
-		const status = message.type === "ask" ? "waiting" : message.partial ? "running" : "running"
+		const isCompletion = isCompletionMessage(message)
+		const status = isCompletion ? "completed" : message.type === "ask" ? "waiting" : message.partial ? "running" : "running"
 		const label = message.ask ?? message.say ?? "message"
 		return {
 			taskId,

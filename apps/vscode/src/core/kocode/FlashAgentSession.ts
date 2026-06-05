@@ -1,85 +1,171 @@
-import type { KocodeChatMessage, TaskSpecPatch, WorkerControlRequest, WorkerDigest } from "@shared/kocode"
+import type { KocodeChatMessage, TaskSpec, TaskSpecPatch, WorkerControlRequest, WorkerDigest, WorkerEvent } from "@shared/kocode"
+import { FlashModelClient, type FlashModelDecision, type FlashWorkerUpdateReason } from "./FlashModelClient"
+import { fallbackClassify } from "./HeuristicClassifier"
+import {
+	createDefaultMemory,
+	FileKocodeMemoryStore,
+	type KocodeMemory,
+	KocodeMemoryMutators,
+	type KocodeMemoryPersistence,
+	memoryToPromptText,
+} from "./KocodeMemoryStore"
+import { KocodeTrace } from "./KocodeTrace"
+
+type FlashDecisionClient = Pick<FlashModelClient, "decide"> & Partial<Pick<FlashModelClient, "composeWorkerUpdate">>
 
 export type FlashIntent =
 	| { type: "social_chat"; reply: string }
 	| { type: "status_question"; reply: string }
-	| { type: "complex_task" }
-	| { type: "task_revision"; patch: TaskSpecPatch }
+	| { type: "new_task"; decision: FlashModelDecision }
+	| { type: "extend_task"; decision: FlashModelDecision; patch: TaskSpecPatch; reply: string }
+	| { type: "task_revision"; patch: TaskSpecPatch; reply: string }
 	| { type: "worker_control"; control: WorkerControlRequest; reply: string }
+	| { type: "flash_error"; reply: string }
 
 export class FlashAgentSession {
-	classify(text: string, messageId: string, workerDigest: WorkerDigest, hasActiveTask: boolean): FlashIntent {
-		const normalized = text.trim()
-		const lower = normalized.toLowerCase()
+	private memory: KocodeMemory = createDefaultMemory()
+	private memoryReady: Promise<void>
 
-		if (this.isPause(lower)) {
-			return {
-				type: "worker_control",
-				control: { action: "pause", reason: normalized },
-				reply: "わかったにゃ、ボス。いったん作業を止めるにゃ。",
-			}
-		}
+	constructor(
+		private readonly modelClient: FlashDecisionClient = new FlashModelClient(),
+		private readonly memoryStore: KocodeMemoryPersistence = new FileKocodeMemoryStore(undefined),
+	) {
+		this.memoryReady = this.memoryStore
+			.load()
+			.then((loaded) => {
+				this.memory = loaded
+			})
+			.catch((error) => {
+				KocodeTrace.error("kocode_memory_load_failed", error)
+			})
+	}
 
-		if (this.isCancel(lower)) {
-			return {
-				type: "worker_control",
-				control: { action: "cancel", reason: normalized },
-				reply: "了解にゃ。今の作業はキャンセルしておくにゃ。",
-			}
-		}
-
-		if (this.isRedirect(lower) && hasActiveTask) {
-			return {
-				type: "worker_control",
-				control: {
-					action: "redirect",
-					reason: normalized,
-					taskSpecPatch: {
-						kind: "reject_direction",
-						text: normalized,
-						sourceMessageId: messageId,
-						createdAt: Date.now(),
-					},
-				},
-				reply: "方向を変えるんだね、ボス。今の作業を止めて、整理し直すにゃ。",
-			}
-		}
-
-		if (this.isStatusQuestion(lower)) {
-			return {
-				type: "status_question",
-				reply: `いまは「${workerDigest.title}」だにゃ。${workerDigest.summary}`,
-			}
-		}
-
-		if (hasActiveTask && this.isRevision(lower)) {
-			return {
-				type: "task_revision",
-				patch: {
-					kind: "add_constraint",
-					text: normalized,
-					sourceMessageId: messageId,
-					createdAt: Date.now(),
-				},
-			}
-		}
-
-		if (this.isComplexTask(lower)) {
-			return { type: "complex_task" }
-		}
-
-		return {
-			type: "social_chat",
-			reply: "うんうん、聞いてるにゃ。コードのことでも、ちょっとした相談でも大丈夫だにゃ、ボス。",
+	async classify(
+		text: string,
+		messageId: string,
+		workerDigest: WorkerDigest,
+		hasActiveTask: boolean,
+		taskSpec?: TaskSpec,
+		recentMessages: Array<{ author: "user" | "flash"; text: string }> = [],
+	): Promise<FlashIntent> {
+		await this.memoryReady
+		KocodeTrace.log("flash_classify_start", {
+			messageId,
+			hasActiveTask,
+			workerStatus: workerDigest.status,
+			taskStatus: taskSpec?.status,
+			taskGoal: taskSpec?.goal,
+			recentMessages: recentMessages.length,
+			text,
+		})
+		try {
+			const decision = await this.modelClient.decide({
+				projectMemory: memoryToPromptText(this.memory) || this.memory.projectSummary,
+				taskSpec,
+				workerDigest,
+				recentSocialSummary: this.memory.socialSummary,
+				recentMessages,
+				userMessage: text,
+			})
+			await this.applyMemoryUpdate(decision)
+			const intent = this.toIntent(decision, text, messageId, hasActiveTask)
+			KocodeTrace.log("flash_intent", {
+				messageId,
+				modelIntent: decision.intent,
+				finalIntent: intent.type,
+				patchKind: "patch" in intent ? intent.patch.kind : undefined,
+				workerAction: intent.type === "worker_control" ? intent.control.action : undefined,
+				reply: "reply" in intent ? intent.reply : undefined,
+			})
+			return intent
+		} catch (error) {
+			KocodeTrace.error("flash_classify_failed", error, { messageId, text })
+			// Local deterministic fallback so the user message is never silently dropped.
+			const fallback = fallbackClassify({
+				text,
+				messageId,
+				hasActiveTask,
+				taskSpec,
+				workerStatus: workerDigest.status,
+			})
+			KocodeTrace.log("flash_intent_fallback", {
+				messageId,
+				finalIntent: fallback.type,
+			})
+			return fallback
 		}
 	}
 
-	workerStartedMessage(): string {
-		return "ボス、ここからは裏でしっかり作業を進めるにゃ。細かい流れは作業画面で見られるにゃ。"
+	workerStartedMessage(decision?: FlashModelDecision): string {
+		return decision?.reply || "まかせてにゃ、ボス。まずは小さく整理して、裏で作業を始めるにゃ。"
 	}
 
-	revisionQueuedMessage(): string {
-		return "追加の希望、ちゃんとメモしたにゃ。次の整理タイミングで反映するにゃ。"
+	revisionQueuedMessage(reply?: string): string {
+		return reply || "追加の希望、ちゃんとメモしたにゃ。次の整理タイミングで反映するにゃ。"
+	}
+
+	async composeWorkerUpdate(
+		reason: FlashWorkerUpdateReason,
+		workerDigest: WorkerDigest,
+		taskSpec?: TaskSpec,
+		recentWorkerEvents: WorkerEvent[] = [],
+	): Promise<string | undefined> {
+		await this.memoryReady
+		if (!this.modelClient.composeWorkerUpdate) {
+			return undefined
+		}
+		KocodeTrace.log("flash_worker_update_start", {
+			reason,
+			workerStatus: workerDigest.status,
+			workerTitle: workerDigest.title,
+			taskStatus: taskSpec?.status,
+			taskGoal: taskSpec?.goal,
+			recentWorkerEvents: recentWorkerEvents.length,
+		})
+		const update = await this.modelClient.composeWorkerUpdate({
+			projectMemory: memoryToPromptText(this.memory) || this.memory.projectSummary,
+			taskSpec,
+			workerDigest,
+			recentSocialSummary: this.memory.socialSummary,
+			recentWorkerEvents,
+			reason,
+		})
+		if (update.memoryUpdate.projectMemory) {
+			this.memory = KocodeMemoryMutators.setProjectSummary(this.memory, update.memoryUpdate.projectMemory)
+			void this.persistMemory()
+		}
+		if (update.memoryUpdate.socialMemory) {
+			this.memory = KocodeMemoryMutators.setSocialSummary(this.memory, update.memoryUpdate.socialMemory)
+			void this.persistMemory()
+		}
+		KocodeTrace.log("flash_worker_update_result", {
+			reason,
+			shouldNotify: update.shouldNotify,
+			reply: update.reply,
+		})
+		return update.shouldNotify && update.reply.trim() ? update.reply.trim() : undefined
+	}
+
+	getMemorySnapshot(): KocodeMemory {
+		return this.memory
+	}
+
+	rememberRejectedDirection(text: string): void {
+		this.memory = KocodeMemoryMutators.rejectDirection(this.memory, text)
+		void this.persistMemory()
+	}
+
+	rememberAcceptedDecision(text: string): void {
+		this.memory = KocodeMemoryMutators.acceptDecision(this.memory, text)
+		void this.persistMemory()
+	}
+
+	private async persistMemory(): Promise<void> {
+		try {
+			await this.memoryStore.save(this.memory)
+		} catch (error) {
+			KocodeTrace.error("kocode_memory_save_failed", error)
+		}
 	}
 
 	toMessage(text: string): KocodeChatMessage {
@@ -91,29 +177,78 @@ export class FlashAgentSession {
 		}
 	}
 
-	private isPause(text: string): boolean {
-		return /暂停|停一下|先停|止め|待って|pause|hold/.test(text)
+	private toIntent(decision: FlashModelDecision, originalText: string, messageId: string, hasActiveTask: boolean): FlashIntent {
+		switch (decision.intent) {
+			case "social_chat":
+				return { type: "social_chat", reply: decision.reply }
+			case "status_question":
+				return { type: "status_question", reply: decision.reply }
+			case "new_task":
+				return { type: "new_task", decision }
+			case "extend_task": {
+				// Extend = same flow, additional scope. Use add_constraint or add_file_scope as the patch.
+				const patchKind = decision.patch.kind ?? "add_constraint"
+				const patchText = decision.patch.text ?? decision.task.goal ?? originalText
+				const patch: TaskSpecPatch = {
+					kind: patchKind,
+					text: patchText,
+					sourceMessageId: messageId,
+					createdAt: Date.now(),
+				}
+				return { type: "extend_task", decision, patch, reply: decision.reply }
+			}
+			case "task_revision":
+				return {
+					type: "task_revision",
+					patch: {
+						kind: decision.patch.kind ?? "add_constraint",
+						text: decision.patch.text ?? originalText,
+						sourceMessageId: messageId,
+						createdAt: Date.now(),
+					},
+					reply: decision.reply,
+				}
+			case "worker_control": {
+				const action = decision.workerControl.action ?? (hasActiveTask ? "append_context" : "replan")
+				const patchKind = decision.patch.kind ?? (action === "redirect" ? "reject_direction" : undefined)
+				const patch: TaskSpecPatch | undefined = patchKind
+					? {
+							kind: patchKind,
+							text: decision.patch.text ?? decision.workerControl.reason ?? originalText,
+							sourceMessageId: messageId,
+							createdAt: Date.now(),
+						}
+					: undefined
+				return {
+					type: "worker_control",
+					control: {
+						action,
+						reason: decision.workerControl.reason ?? originalText,
+						taskSpecPatch: patch,
+					},
+					reply: decision.reply,
+				}
+			}
+		}
 	}
 
-	private isCancel(text: string): boolean {
-		return /取消|不要做了|终止|キャンセル|cancel|abort/.test(text)
-	}
-
-	private isRedirect(text: string): boolean {
-		return /不是这个|方向不对|改方向|重新来|やり直|違う|redirect/.test(text)
-	}
-
-	private isStatusQuestion(text: string): boolean {
-		return /进度|状态|做到哪|现在.*做|何して|状況|status|progress/.test(text)
-	}
-
-	private isRevision(text: string): boolean {
-		return /顺便|另外|改成|不要|加上|去掉|もっと|追加|変更|instead|also/.test(text)
-	}
-
-	private isComplexTask(text: string): boolean {
-		return /实现|修改|修复|调试|报错|代码|文件|生成|做|写|教我|解释|课件|思维导图|出题|add|fix|debug|implement|create|update|コード|エラー|作って|説明|クイズ/.test(
-			text,
-		)
+	private async applyMemoryUpdate(decision: FlashModelDecision): Promise<void> {
+		let changed = false
+		if (decision.memoryUpdate.projectMemory) {
+			this.memory = KocodeMemoryMutators.setProjectSummary(this.memory, decision.memoryUpdate.projectMemory)
+			changed = true
+		}
+		if (decision.memoryUpdate.socialMemory) {
+			this.memory = KocodeMemoryMutators.setSocialSummary(this.memory, decision.memoryUpdate.socialMemory)
+			changed = true
+		}
+		// Mirror reject_direction patches into long-term memory so future tasks remember what was rejected.
+		if (decision.intent === "worker_control" && decision.patch.kind === "reject_direction" && decision.patch.text) {
+			this.memory = KocodeMemoryMutators.rejectDirection(this.memory, decision.patch.text)
+			changed = true
+		}
+		if (changed) {
+			await this.persistMemory()
+		}
 	}
 }
