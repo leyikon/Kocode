@@ -1,5 +1,6 @@
 import type { ClineMessage } from "@shared/ExtensionMessage"
 import type { TaskSpec, WorkerDigest } from "@shared/kocode"
+import { KnowledgeContextProvider } from "@/core/knowledge/KnowledgeContextProvider"
 
 function isCompletionMessage(message: ClineMessage): boolean {
 	return !message.partial && (message.say === "completion_result" || message.ask === "completion_result")
@@ -49,6 +50,30 @@ export class ContextSanitizer {
 			`## Pending Revisions\n${pending}`,
 			`## Acceptance Criteria\n${criteria}`,
 		].join("\n")
+	}
+
+	/**
+	 * 在基础 Worker prompt 之后追加项目知识图谱上下文(R5)。
+	 * 注入失败/无图谱时仅返回基础 prompt,绝不阻塞 Worker 启动(R6.4)。
+	 *
+	 * @param workspaceRoot 工作区根路径;缺省则跳过注入。
+	 */
+	async toWorkerPromptWithKnowledge(taskSpec: TaskSpec, workspaceRoot?: string): Promise<string> {
+		const base = this.toWorkerPrompt(taskSpec)
+		if (!workspaceRoot) {
+			return base
+		}
+		try {
+			const provider = new KnowledgeContextProvider(workspaceRoot)
+			const injection = await provider.buildInjection(taskSpec)
+			if (!injection) {
+				return base
+			}
+			return `${base}\n\n${injection}`
+		} catch {
+			// 注入是增强而非必需:任何失败都回退到基础 prompt。
+			return base
+		}
 	}
 
 	toDigestFromMessage(message: ClineMessage, taskId?: string): WorkerDigest {

@@ -93,7 +93,10 @@ export class ClineWorkerAdapter {
 
 	async start(taskSpec: TaskSpec): Promise<void> {
 		this.currentTaskSpec = taskSpec
-		const prompt = this.sanitizer.toWorkerPrompt(taskSpec)
+		const workspaceRoot =
+			this.controller.getWorkspaceManager()?.getPrimaryRoot()?.path ??
+			(await this.controller.ensureWorkspaceManager())?.getPrimaryRoot()?.path
+		const prompt = await this.sanitizer.toWorkerPromptWithKnowledge(taskSpec, workspaceRoot)
 		KocodeTrace.log("worker_start", {
 			taskId: taskSpec.id,
 			goal: taskSpec.goal,

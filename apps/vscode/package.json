@@ -200,6 +200,21 @@
 				"icon": "$(cline-icon)"
 			},
 			{
+				"command": "cline.knowledge.analyze",
+				"title": "生成项目知识图谱 (Analyze Project Knowledge Graph)",
+				"category": "Kocode"
+			},
+			{
+				"command": "cline.knowledge.refresh",
+				"title": "刷新项目知识图谱 (Refresh Project Knowledge Graph)",
+				"category": "Kocode"
+			},
+			{
+				"command": "cline.knowledge.openProjectMap",
+				"title": "打开 Project Map (即将推出)",
+				"category": "Kocode"
+			},
+			{
 				"command": "cline.abortGitCommitMessage",
 				"title": "Generate Commit Message with Kocode - Stop",
 				"category": "Kocode",
@@ -552,6 +567,7 @@
 		"exceljs": "^4.4.0",
 		"execa": "^9.5.2",
 		"fast-deep-equal": "^3.1.3",
+		"fuse.js": "^7.4.1",
 		"fzf": "^0.5.2",
 		"get-folder-size": "^5.0.0",
 		"globby": "^14.0.2",

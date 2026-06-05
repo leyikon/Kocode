@@ -30,6 +30,10 @@ const ClineCommands = {
 	JupyterGenerateCell: prefix + ".jupyterGenerateCell",
 	JupyterExplainCell: prefix + ".jupyterExplainCell",
 	JupyterImproveCell: prefix + ".jupyterImproveCell",
+	// Project Knowledge Graph commands
+	KnowledgeAnalyze: prefix + ".knowledge.analyze",
+	KnowledgeRefresh: prefix + ".knowledge.refresh",
+	KnowledgeOpenProjectMap: prefix + ".knowledge.openProjectMap",
 }
 
 /**

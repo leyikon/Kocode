@@ -1,0 +1,11 @@
+{
+  "lastAnalyzedAt": "2026-06-05T11:31:17.327Z",
+  "gitCommitHash": "816f5cbb0ae30ad7793a120be6c0c339acdad659",
+  "version": "1.0.0",
+  "analyzedFiles": 1613,
+  "generatedTiers": [
+    "structure",
+    "semantic"
+  ],
+  "status": "partial"
+}

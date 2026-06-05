@@ -14,7 +14,7 @@ import { sendWorktreesButtonClickedEvent } from "./core/controller/ui/subscribeT
 import { WebviewProvider } from "./core/webview"
 import { createClineAPI } from "./exports"
 import { initializeTestMode } from "./services/test/TestMode"
-import "./utils/path" // necessary to have access to String.prototype.toPosix
+import "./utils/path"; // necessary to have access to String.prototype.toPosix
 import path from "node:path"
 import type { ExtensionContext } from "vscode"
 import { HostProvider } from "@/hosts/host-provider"
@@ -30,20 +30,20 @@ import { sendAddToInputEvent } from "./core/controller/ui/subscribeToAddToInput"
 import { sendShowWebviewEvent } from "./core/controller/ui/subscribeToShowWebview"
 import { HookDiscoveryCache } from "./core/hooks/HookDiscoveryCache"
 import {
-	cleanupMcpMarketplaceCatalogFromGlobalState,
-	cleanupOldApiKey,
-	migrateCustomInstructionsToGlobalRules,
-	migrateTaskHistoryToFile,
-	migrateWelcomeViewCompleted,
-	migrateWorkspaceToGlobalStorage,
+    cleanupMcpMarketplaceCatalogFromGlobalState,
+    cleanupOldApiKey,
+    migrateCustomInstructionsToGlobalRules,
+    migrateTaskHistoryToFile,
+    migrateWelcomeViewCompleted,
+    migrateWorkspaceToGlobalStorage,
 } from "./core/storage/state-migrations"
 import { workspaceResolver } from "./core/workspace"
 import { findMatchingNotebookCell, getContextForCommand, showWebview } from "./hosts/vscode/commandUtils"
 import { abortCommitGeneration, generateCommitMsg } from "./hosts/vscode/commit-message-generator"
 import { registerClineOutputChannel } from "./hosts/vscode/hostbridge/env/debugLog"
 import {
-	disposeVscodeCommentReviewController,
-	getVscodeCommentReviewController,
+    disposeVscodeCommentReviewController,
+    getVscodeCommentReviewController,
 } from "./hosts/vscode/review/VscodeCommentReviewController"
 import { VscodeTerminalManager } from "./hosts/vscode/terminal/VscodeTerminalManager"
 import { VscodeDiffViewProvider } from "./hosts/vscode/VscodeDiffViewProvider"
@@ -524,6 +524,24 @@ ${ctx.cellJson || "{}"}
 			abortCommitGeneration()
 		}),
 	)
+
+	// Register Project Knowledge Graph commands
+	const { registerKnowledgeCommands } = await import("./core/knowledge/commands")
+	context.subscriptions.push(...registerKnowledgeCommands(webview.controller))
+
+	// Start Project Knowledge Graph auto-updater (commit 后增量更新;仅当 autoUpdate=true 时挂载)
+	{
+		const knowledgeRoot =
+			(await webview.controller.ensureWorkspaceManager())?.getPrimaryRoot()?.path ||
+			(await (await import("@utils/path")).getWorkspacePath()) ||
+			undefined
+		if (knowledgeRoot) {
+			const { KnowledgeAutoUpdater } = await import("./core/knowledge/KnowledgeAutoUpdater")
+			const autoUpdater = new KnowledgeAutoUpdater(knowledgeRoot)
+			void autoUpdater.start()
+			context.subscriptions.push({ dispose: () => autoUpdater.dispose() })
+		}
+	}
 
 	// Listen for secrets changes (e.g., cross-window login/logout sync)
 	const unsubSecrets = storageContext.secrets.onDidChange((event) => {

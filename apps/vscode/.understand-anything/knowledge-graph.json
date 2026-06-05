@@ -1,0 +1,3018 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "vscode",
+    "languages": [
+      "css",
+      "env",
+      "html",
+      "javascript",
+      "json",
+      "markdown",
+      "protobuf",
+      "shell",
+      "typescript",
+      "yaml"
+    ],
+    "frameworks": [],
+    "description": "",
+    "analyzedAt": "2026-06-05T11:31:14.898Z",
+    "gitCommitHash": "816f5cbb0ae30ad7793a120be6c0c339acdad659"
+  },
+  "nodes": [
+    {
+      "id": "file:.DS_Store",
+      "type": "file",
+      "name": ".DS_Store",
+      "filePath": ".DS_Store",
+      "summary": ".DS_Store",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:.env.example",
+      "type": "file",
+      "name": ".env.example",
+      "filePath": ".env.example",
+      "summary": ".env.example",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:.mocharc.json",
+      "type": "file",
+      "name": ".mocharc.json",
+      "filePath": ".mocharc.json",
+      "summary": ".mocharc.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:.mocharc.knowledge.json",
+      "type": "file",
+      "name": ".mocharc.knowledge.json",
+      "filePath": ".mocharc.knowledge.json",
+      "summary": ".mocharc.knowledge.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:.nycrc.unit.json",
+      "type": "file",
+      "name": ".nycrc.unit.json",
+      "filePath": ".nycrc.unit.json",
+      "summary": ".nycrc.unit.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:.vscodeignore",
+      "type": "file",
+      "name": ".vscodeignore",
+      "filePath": ".vscodeignore",
+      "summary": ".vscodeignore",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:README.marketplace.md",
+      "type": "file",
+      "name": "README.marketplace.md",
+      "filePath": "README.marketplace.md",
+      "summary": "README.marketplace.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "README.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:biome.jsonc",
+      "type": "file",
+      "name": "biome.jsonc",
+      "filePath": "biome.jsonc",
+      "summary": "biome.jsonc",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:buf.yaml",
+      "type": "file",
+      "name": "buf.yaml",
+      "filePath": "buf.yaml",
+      "summary": "buf.yaml",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:endpoints.json",
+      "type": "file",
+      "name": "endpoints.json",
+      "filePath": "endpoints.json",
+      "summary": "endpoints.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:knip.json",
+      "type": "file",
+      "name": "knip.json",
+      "filePath": "knip.json",
+      "summary": "knip.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:package.json",
+      "type": "file",
+      "name": "package.json",
+      "filePath": "package.json",
+      "summary": "package.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:skills-lock.json",
+      "type": "file",
+      "name": "skills-lock.json",
+      "filePath": "skills-lock.json",
+      "summary": "skills-lock.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tsconfig.json",
+      "type": "file",
+      "name": "tsconfig.json",
+      "filePath": "tsconfig.json",
+      "summary": "tsconfig.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tsconfig.test.json",
+      "type": "file",
+      "name": "tsconfig.test.json",
+      "filePath": "tsconfig.test.json",
+      "summary": "tsconfig.test.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tsconfig.unit-test.json",
+      "type": "file",
+      "name": "tsconfig.unit-test.json",
+      "filePath": "tsconfig.unit-test.json",
+      "summary": "tsconfig.unit-test.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/descriptor_set.pb",
+      "type": "file",
+      "name": "descriptor_set.pb",
+      "filePath": "proto/descriptor_set.pb",
+      "summary": "descriptor_set.pb",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/add-endpoints-to-jetbrains.sh",
+      "type": "file",
+      "name": "add-endpoints-to-jetbrains.sh",
+      "filePath": "scripts/add-endpoints-to-jetbrains.sh",
+      "summary": "add-endpoints-to-jetbrains.sh",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/add-endpoints-to-vsix.sh",
+      "type": "file",
+      "name": "add-endpoints-to-vsix.sh",
+      "filePath": "scripts/add-endpoints-to-vsix.sh",
+      "summary": "add-endpoints-to-vsix.sh",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/get-vscode-usages.sh",
+      "type": "file",
+      "name": "get-vscode-usages.sh",
+      "filePath": "scripts/get-vscode-usages.sh",
+      "summary": "get-vscode-usages.sh",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/proto-lint.sh",
+      "type": "file",
+      "name": "proto-lint.sh",
+      "filePath": "scripts/proto-lint.sh",
+      "summary": "proto-lint.sh",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/run-extension-host.sh",
+      "type": "file",
+      "name": "run-extension-host.sh",
+      "filePath": "scripts/run-extension-host.sh",
+      "summary": "run-extension-host.sh",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/runclinecore.sh",
+      "type": "file",
+      "name": "runclinecore.sh",
+      "filePath": "scripts/runclinecore.sh",
+      "summary": "runclinecore.sh",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:testing-platform/README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "testing-platform/README.md",
+      "summary": "README.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:testing-platform/package.json",
+      "type": "file",
+      "name": "package.json",
+      "filePath": "testing-platform/package.json",
+      "summary": "package.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:testing-platform/tsconfig.json",
+      "type": "file",
+      "name": "tsconfig.json",
+      "filePath": "testing-platform/tsconfig.json",
+      "summary": "tsconfig.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/components.json",
+      "type": "file",
+      "name": "components.json",
+      "filePath": "webview-ui/components.json",
+      "summary": "components.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/index.html",
+      "type": "file",
+      "name": "index.html",
+      "filePath": "webview-ui/index.html",
+      "summary": "index.html",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/package.json",
+      "type": "file",
+      "name": "package.json",
+      "filePath": "webview-ui/package.json",
+      "summary": "package.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/tsconfig.app.json",
+      "type": "file",
+      "name": "tsconfig.app.json",
+      "filePath": "webview-ui/tsconfig.app.json",
+      "summary": "tsconfig.app.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/tsconfig.json",
+      "type": "file",
+      "name": "tsconfig.json",
+      "filePath": "webview-ui/tsconfig.json",
+      "summary": "tsconfig.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/tsconfig.node.json",
+      "type": "file",
+      "name": "tsconfig.node.json",
+      "filePath": "webview-ui/tsconfig.node.json",
+      "summary": "tsconfig.node.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:dist-standalone/proto/descriptor_set.pb",
+      "type": "file",
+      "name": "descriptor_set.pb",
+      "filePath": "dist-standalone/proto/descriptor_set.pb",
+      "summary": "descriptor_set.pb",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/account.proto",
+      "type": "file",
+      "name": "account.proto",
+      "filePath": "proto/cline/account.proto",
+      "summary": "account.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/browser.proto",
+      "type": "file",
+      "name": "browser.proto",
+      "filePath": "proto/cline/browser.proto",
+      "summary": "browser.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/checkpoints.proto",
+      "type": "file",
+      "name": "checkpoints.proto",
+      "filePath": "proto/cline/checkpoints.proto",
+      "summary": "checkpoints.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/commands.proto",
+      "type": "file",
+      "name": "commands.proto",
+      "filePath": "proto/cline/commands.proto",
+      "summary": "commands.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/common.proto",
+      "type": "file",
+      "name": "common.proto",
+      "filePath": "proto/cline/common.proto",
+      "summary": "common.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/file.proto",
+      "type": "file",
+      "name": "file.proto",
+      "filePath": "proto/cline/file.proto",
+      "summary": "file.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/hooks.proto",
+      "type": "file",
+      "name": "hooks.proto",
+      "filePath": "proto/cline/hooks.proto",
+      "summary": "hooks.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/mcp.proto",
+      "type": "file",
+      "name": "mcp.proto",
+      "filePath": "proto/cline/mcp.proto",
+      "summary": "mcp.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/models.proto",
+      "type": "file",
+      "name": "models.proto",
+      "filePath": "proto/cline/models.proto",
+      "summary": "models.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/oca_account.proto",
+      "type": "file",
+      "name": "oca_account.proto",
+      "filePath": "proto/cline/oca_account.proto",
+      "summary": "oca_account.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/slash.proto",
+      "type": "file",
+      "name": "slash.proto",
+      "filePath": "proto/cline/slash.proto",
+      "summary": "slash.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/state.proto",
+      "type": "file",
+      "name": "state.proto",
+      "filePath": "proto/cline/state.proto",
+      "summary": "state.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/task.proto",
+      "type": "file",
+      "name": "task.proto",
+      "filePath": "proto/cline/task.proto",
+      "summary": "task.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/ui.proto",
+      "type": "file",
+      "name": "ui.proto",
+      "filePath": "proto/cline/ui.proto",
+      "summary": "ui.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/web.proto",
+      "type": "file",
+      "name": "web.proto",
+      "filePath": "proto/cline/web.proto",
+      "summary": "web.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/cline/worktree.proto",
+      "type": "file",
+      "name": "worktree.proto",
+      "filePath": "proto/cline/worktree.proto",
+      "summary": "worktree.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/host/diff.proto",
+      "type": "file",
+      "name": "diff.proto",
+      "filePath": "proto/host/diff.proto",
+      "summary": "diff.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/host/env.proto",
+      "type": "file",
+      "name": "env.proto",
+      "filePath": "proto/host/env.proto",
+      "summary": "env.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/host/testing.proto",
+      "type": "file",
+      "name": "testing.proto",
+      "filePath": "proto/host/testing.proto",
+      "summary": "testing.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/host/window.proto",
+      "type": "file",
+      "name": "window.proto",
+      "filePath": "proto/host/window.proto",
+      "summary": "window.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:proto/host/workspace.proto",
+      "type": "file",
+      "name": "workspace.proto",
+      "filePath": "proto/host/workspace.proto",
+      "summary": "workspace.proto",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "src/core/README.md",
+      "summary": "README.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/exports/README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "src/exports/README.md",
+      "summary": "README.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:standalone/runtime-files/package.json",
+      "type": "file",
+      "name": "package.json",
+      "filePath": "standalone/runtime-files/package.json",
+      "summary": "package.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tests/specs/grpc_recorded_session_single_root.json",
+      "type": "file",
+      "name": "grpc_recorded_session_single_root.json",
+      "filePath": "tests/specs/grpc_recorded_session_single_root.json",
+      "summary": "grpc_recorded_session_single_root.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/src/index.css",
+      "type": "file",
+      "name": "index.css",
+      "filePath": "webview-ui/src/index.css",
+      "summary": "index.css",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/src/main.css",
+      "type": "file",
+      "name": "main.css",
+      "filePath": "webview-ui/src/main.css",
+      "summary": "main.css",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/src/theme.css",
+      "type": "file",
+      "name": "theme.css",
+      "filePath": "webview-ui/src/theme.css",
+      "summary": "theme.css",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/dev/grit/console-log.grit",
+      "type": "file",
+      "name": "console-log.grit",
+      "filePath": "src/dev/grit/console-log.grit",
+      "summary": "console-log.grit",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/dev/grit/process-env.grit",
+      "type": "file",
+      "name": "process-env.grit",
+      "filePath": "src/dev/grit/process-env.grit",
+      "summary": "process-env.grit",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/dev/grit/use-cache-service.grit",
+      "type": "file",
+      "name": "use-cache-service.grit",
+      "filePath": "src/dev/grit/use-cache-service.grit",
+      "summary": "use-cache-service.grit",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/dev/grit/vscode-api.grit",
+      "type": "file",
+      "name": "vscode-api.grit",
+      "filePath": "src/dev/grit/vscode-api.grit",
+      "summary": "vscode-api.grit",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/shared/providers/bedrock.json",
+      "type": "file",
+      "name": "bedrock.json",
+      "filePath": "src/shared/providers/bedrock.json",
+      "summary": "bedrock.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/shared/providers/providers.json",
+      "type": "file",
+      "name": "providers.json",
+      "filePath": "src/shared/providers/providers.json",
+      "summary": "providers.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/shared/providers/vertex.json",
+      "type": "file",
+      "name": "vertex.json",
+      "filePath": "src/shared/providers/vertex.json",
+      "summary": "vertex.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/e2e/README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "src/test/e2e/README.md",
+      "summary": "README.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:standalone/runtime-files/vscode/package.json",
+      "type": "file",
+      "name": "package.json",
+      "filePath": "standalone/runtime-files/vscode/package.json",
+      "summary": "package.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/src/config/platform-configs.json",
+      "type": "file",
+      "name": "platform-configs.json",
+      "filePath": "webview-ui/src/config/platform-configs.json",
+      "summary": "platform-configs.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/CONTRIBUTING.md",
+      "type": "file",
+      "name": "CONTRIBUTING.md",
+      "filePath": "src/core/prompts/system-prompt/CONTRIBUTING.md",
+      "summary": "CONTRIBUTING.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "src/core/prompts/system-prompt/README.md",
+      "summary": "README.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/samples/cli/github-integration/cline-responder.yml",
+      "type": "file",
+      "name": "cline-responder.yml",
+      "filePath": "src/samples/cli/github-integration/cline-responder.yml",
+      "summary": "cline-responder.yml",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/samples/cli/github-issue-rca/analyze-issue.sh",
+      "type": "file",
+      "name": "analyze-issue.sh",
+      "filePath": "src/samples/cli/github-issue-rca/analyze-issue.sh",
+      "summary": "analyze-issue.sh",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/e2e/fixtures/multiroots.code-workspace",
+      "type": "file",
+      "name": "multiroots.code-workspace",
+      "filePath": "src/test/e2e/fixtures/multiroots.code-workspace",
+      "summary": "multiroots.code-workspace",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/src/components/common/codeblock-parser.css",
+      "type": "file",
+      "name": "codeblock-parser.css",
+      "filePath": "webview-ui/src/components/common/codeblock-parser.css",
+      "summary": "codeblock-parser.css",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/src/components/kocode/KocodeChatView.css",
+      "type": "file",
+      "name": "KocodeChatView.css",
+      "filePath": "webview-ui/src/components/kocode/KocodeChatView.css",
+      "summary": "KocodeChatView.css",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/src/components/mcp/RICH_MCP_TESTING.md",
+      "type": "file",
+      "name": "RICH_MCP_TESTING.md",
+      "filePath": "webview-ui/src/components/mcp/RICH_MCP_TESTING.md",
+      "summary": "RICH_MCP_TESTING.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/src/components/settings/README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "webview-ui/src/components/settings/README.md",
+      "summary": "README.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "src/core/hooks/__tests__/fixtures/README.md",
+      "summary": "README.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "src/core/prompts/system-prompt/__tests__/README.md",
+      "summary": "README.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/tools/README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "src/core/prompts/system-prompt/tools/README.md",
+      "summary": "README.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/e2e/fixtures/workspace/README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "src/test/e2e/fixtures/workspace/README.md",
+      "summary": "README.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/e2e/fixtures/workspace/index.html",
+      "type": "file",
+      "name": "index.html",
+      "filePath": "src/test/e2e/fixtures/workspace/index.html",
+      "summary": "index.html",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/e2e/fixtures/workspace_2/README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "src/test/e2e/fixtures/workspace_2/README.md",
+      "summary": "README.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:webview-ui/src/components/kocode/workbench/KocodeWorkbenchView.css",
+      "type": "file",
+      "name": "KocodeWorkbenchView.css",
+      "filePath": "webview-ui/src/components/kocode/workbench/KocodeWorkbenchView.css",
+      "summary": "KocodeWorkbenchView.css",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/template/HookName",
+      "type": "file",
+      "name": "HookName",
+      "filePath": "src/core/hooks/__tests__/fixtures/template/HookName",
+      "summary": "HookName",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/template/README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "src/core/hooks/__tests__/fixtures/template/README.md",
+      "summary": "README.md",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/anthropic_claude_sonnet_4-basic.snap",
+      "type": "file",
+      "name": "anthropic_claude_sonnet_4-basic.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/anthropic_claude_sonnet_4-basic.snap",
+      "summary": "anthropic_claude_sonnet_4-basic.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/anthropic_claude_sonnet_4-no-browser.snap",
+      "type": "file",
+      "name": "anthropic_claude_sonnet_4-no-browser.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/anthropic_claude_sonnet_4-no-browser.snap",
+      "summary": "anthropic_claude_sonnet_4-no-browser.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/anthropic_claude_sonnet_4-no-focus-chain.snap",
+      "type": "file",
+      "name": "anthropic_claude_sonnet_4-no-focus-chain.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/anthropic_claude_sonnet_4-no-focus-chain.snap",
+      "summary": "anthropic_claude_sonnet_4-no-focus-chain.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/anthropic_claude_sonnet_4-no-mcp.snap",
+      "type": "file",
+      "name": "anthropic_claude_sonnet_4-no-mcp.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/anthropic_claude_sonnet_4-no-mcp.snap",
+      "summary": "anthropic_claude_sonnet_4-no-mcp.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_claude_4_5_sonnet-basic.snap",
+      "type": "file",
+      "name": "cline_claude_4_5_sonnet-basic.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/cline_claude_4_5_sonnet-basic.snap",
+      "summary": "cline_claude_4_5_sonnet-basic.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_claude_4_5_sonnet-no-browser.snap",
+      "type": "file",
+      "name": "cline_claude_4_5_sonnet-no-browser.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/cline_claude_4_5_sonnet-no-browser.snap",
+      "summary": "cline_claude_4_5_sonnet-no-browser.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_claude_4_5_sonnet-no-focus-chain.snap",
+      "type": "file",
+      "name": "cline_claude_4_5_sonnet-no-focus-chain.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/cline_claude_4_5_sonnet-no-focus-chain.snap",
+      "summary": "cline_claude_4_5_sonnet-no-focus-chain.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_claude_4_5_sonnet-no-mcp.snap",
+      "type": "file",
+      "name": "cline_claude_4_5_sonnet-no-mcp.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/cline_claude_4_5_sonnet-no-mcp.snap",
+      "summary": "cline_claude_4_5_sonnet-no-mcp.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_devstral-basic.snap",
+      "type": "file",
+      "name": "cline_devstral-basic.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/cline_devstral-basic.snap",
+      "summary": "cline_devstral-basic.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_devstral-no-browser.snap",
+      "type": "file",
+      "name": "cline_devstral-no-browser.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/cline_devstral-no-browser.snap",
+      "summary": "cline_devstral-no-browser.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_devstral-no-focus-chain.snap",
+      "type": "file",
+      "name": "cline_devstral-no-focus-chain.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/cline_devstral-no-focus-chain.snap",
+      "summary": "cline_devstral-no-focus-chain.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_devstral-no-mcp.snap",
+      "type": "file",
+      "name": "cline_devstral-no-mcp.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/cline_devstral-no-mcp.snap",
+      "summary": "cline_devstral-no-mcp.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_native_next_gen.tools.snap",
+      "type": "file",
+      "name": "cline_native_next_gen.tools.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/cline_native_next_gen.tools.snap",
+      "summary": "cline_native_next_gen.tools.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/lmstudio_qwen3_coder-basic.snap",
+      "type": "file",
+      "name": "lmstudio_qwen3_coder-basic.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/lmstudio_qwen3_coder-basic.snap",
+      "summary": "lmstudio_qwen3_coder-basic.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/lmstudio_qwen3_coder-no-browser.snap",
+      "type": "file",
+      "name": "lmstudio_qwen3_coder-no-browser.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/lmstudio_qwen3_coder-no-browser.snap",
+      "summary": "lmstudio_qwen3_coder-no-browser.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/lmstudio_qwen3_coder-no-focus-chain.snap",
+      "type": "file",
+      "name": "lmstudio_qwen3_coder-no-focus-chain.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/lmstudio_qwen3_coder-no-focus-chain.snap",
+      "summary": "lmstudio_qwen3_coder-no-focus-chain.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/lmstudio_qwen3_coder-no-mcp.snap",
+      "type": "file",
+      "name": "lmstudio_qwen3_coder-no-mcp.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/lmstudio_qwen3_coder-no-mcp.snap",
+      "summary": "lmstudio_qwen3_coder-no-mcp.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/old-generic-with-focus.snap",
+      "type": "file",
+      "name": "old-generic-with-focus.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/old-generic-with-focus.snap",
+      "summary": "old-generic-with-focus.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/old-generic-without-focus.snap",
+      "type": "file",
+      "name": "old-generic-without-focus.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/old-generic-without-focus.snap",
+      "summary": "old-generic-without-focus.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/old-next-gen-with-focus.snap",
+      "type": "file",
+      "name": "old-next-gen-with-focus.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/old-next-gen-with-focus.snap",
+      "summary": "old-next-gen-with-focus.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/old-next-gen-without-focus.snap",
+      "type": "file",
+      "name": "old-next-gen-without-focus.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/old-next-gen-without-focus.snap",
+      "summary": "old-next-gen-without-focus.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_3-basic.snap",
+      "type": "file",
+      "name": "openai_gpt_3-basic.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_3-basic.snap",
+      "summary": "openai_gpt_3-basic.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_3-no-browser.snap",
+      "type": "file",
+      "name": "openai_gpt_3-no-browser.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_3-no-browser.snap",
+      "summary": "openai_gpt_3-no-browser.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_3-no-focus-chain.snap",
+      "type": "file",
+      "name": "openai_gpt_3-no-focus-chain.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_3-no-focus-chain.snap",
+      "summary": "openai_gpt_3-no-focus-chain.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_3-no-mcp.snap",
+      "type": "file",
+      "name": "openai_gpt_3-no-mcp.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_3-no-mcp.snap",
+      "summary": "openai_gpt_3-no-mcp.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5-basic.snap",
+      "type": "file",
+      "name": "openai_gpt_5-basic.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5-basic.snap",
+      "summary": "openai_gpt_5-basic.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5-no-browser.snap",
+      "type": "file",
+      "name": "openai_gpt_5-no-browser.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5-no-browser.snap",
+      "summary": "openai_gpt_5-no-browser.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5-no-focus-chain.snap",
+      "type": "file",
+      "name": "openai_gpt_5-no-focus-chain.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5-no-focus-chain.snap",
+      "summary": "openai_gpt_5-no-focus-chain.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5-no-mcp.snap",
+      "type": "file",
+      "name": "openai_gpt_5-no-mcp.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5-no-mcp.snap",
+      "summary": "openai_gpt_5-no-mcp.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1-basic.snap",
+      "type": "file",
+      "name": "openai_gpt_5_1-basic.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1-basic.snap",
+      "summary": "openai_gpt_5_1-basic.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1-no-browser.snap",
+      "type": "file",
+      "name": "openai_gpt_5_1-no-browser.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1-no-browser.snap",
+      "summary": "openai_gpt_5_1-no-browser.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1-no-focus-chain.snap",
+      "type": "file",
+      "name": "openai_gpt_5_1-no-focus-chain.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1-no-focus-chain.snap",
+      "summary": "openai_gpt_5_1-no-focus-chain.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1-no-mcp.snap",
+      "type": "file",
+      "name": "openai_gpt_5_1-no-mcp.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1-no-mcp.snap",
+      "summary": "openai_gpt_5_1-no-mcp.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1_native.tools.snap",
+      "type": "file",
+      "name": "openai_gpt_5_1_native.tools.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1_native.tools.snap",
+      "summary": "openai_gpt_5_1_native.tools.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_codex-basic.snap",
+      "type": "file",
+      "name": "openai_gpt_5_codex-basic.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_codex-basic.snap",
+      "summary": "openai_gpt_5_codex-basic.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_codex-no-browser.snap",
+      "type": "file",
+      "name": "openai_gpt_5_codex-no-browser.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_codex-no-browser.snap",
+      "summary": "openai_gpt_5_codex-no-browser.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_codex-no-focus-chain.snap",
+      "type": "file",
+      "name": "openai_gpt_5_codex-no-focus-chain.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_codex-no-focus-chain.snap",
+      "summary": "openai_gpt_5_codex-no-focus-chain.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_codex-no-mcp.snap",
+      "type": "file",
+      "name": "openai_gpt_5_codex-no-mcp.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_codex-no-mcp.snap",
+      "summary": "openai_gpt_5_codex-no-mcp.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_native.tools.snap",
+      "type": "file",
+      "name": "openai_gpt_5_native.tools.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_native.tools.snap",
+      "summary": "openai_gpt_5_native.tools.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openrouter_arcee_ai_trinity_large_preview-basic.snap",
+      "type": "file",
+      "name": "openrouter_arcee_ai_trinity_large_preview-basic.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openrouter_arcee_ai_trinity_large_preview-basic.snap",
+      "summary": "openrouter_arcee_ai_trinity_large_preview-basic.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openrouter_arcee_ai_trinity_large_preview-no-browser.snap",
+      "type": "file",
+      "name": "openrouter_arcee_ai_trinity_large_preview-no-browser.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openrouter_arcee_ai_trinity_large_preview-no-browser.snap",
+      "summary": "openrouter_arcee_ai_trinity_large_preview-no-browser.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openrouter_arcee_ai_trinity_large_preview-no-focus-chain.snap",
+      "type": "file",
+      "name": "openrouter_arcee_ai_trinity_large_preview-no-focus-chain.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openrouter_arcee_ai_trinity_large_preview-no-focus-chain.snap",
+      "summary": "openrouter_arcee_ai_trinity_large_preview-no-focus-chain.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openrouter_arcee_ai_trinity_large_preview-no-mcp.snap",
+      "type": "file",
+      "name": "openrouter_arcee_ai_trinity_large_preview-no-mcp.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/openrouter_arcee_ai_trinity_large_preview-no-mcp.snap",
+      "summary": "openrouter_arcee_ai_trinity_large_preview-no-mcp.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/section-title-comparison.json",
+      "type": "file",
+      "name": "section-title-comparison.json",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/section-title-comparison.json",
+      "summary": "section-title-comparison.json",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/test_hermes_4-basic.snap",
+      "type": "file",
+      "name": "test_hermes_4-basic.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/test_hermes_4-basic.snap",
+      "summary": "test_hermes_4-basic.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/test_hermes_4-no-browser.snap",
+      "type": "file",
+      "name": "test_hermes_4-no-browser.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/test_hermes_4-no-browser.snap",
+      "summary": "test_hermes_4-no-browser.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/test_hermes_4-no-focus-chain.snap",
+      "type": "file",
+      "name": "test_hermes_4-no-focus-chain.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/test_hermes_4-no-focus-chain.snap",
+      "summary": "test_hermes_4-no-focus-chain.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/test_hermes_4-no-mcp.snap",
+      "type": "file",
+      "name": "test_hermes_4-no-mcp.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/test_hermes_4-no-mcp.snap",
+      "summary": "test_hermes_4-no-mcp.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini3.tools.snap",
+      "type": "file",
+      "name": "vertex_gemini3.tools.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini3.tools.snap",
+      "summary": "vertex_gemini3.tools.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-basic.snap",
+      "type": "file",
+      "name": "vertex_gemini_3-basic.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-basic.snap",
+      "summary": "vertex_gemini_3-basic.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-no-browser.snap",
+      "type": "file",
+      "name": "vertex_gemini_3-no-browser.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-no-browser.snap",
+      "summary": "vertex_gemini_3-no-browser.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-no-focus-chain.snap",
+      "type": "file",
+      "name": "vertex_gemini_3-no-focus-chain.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-no-focus-chain.snap",
+      "summary": "vertex_gemini_3-no-focus-chain.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-no-mcp.snap",
+      "type": "file",
+      "name": "vertex_gemini_3-no-mcp.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-no-mcp.snap",
+      "summary": "vertex_gemini_3-no-mcp.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-parallel-tools.snap",
+      "type": "file",
+      "name": "vertex_gemini_3-parallel-tools.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-parallel-tools.snap",
+      "summary": "vertex_gemini_3-parallel-tools.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/zai_glm_4_6-basic.snap",
+      "type": "file",
+      "name": "zai_glm_4_6-basic.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/zai_glm_4_6-basic.snap",
+      "summary": "zai_glm_4_6-basic.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/zai_glm_4_6-no-browser.snap",
+      "type": "file",
+      "name": "zai_glm_4_6-no-browser.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/zai_glm_4_6-no-browser.snap",
+      "summary": "zai_glm_4_6-no-browser.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/zai_glm_4_6-no-focus-chain.snap",
+      "type": "file",
+      "name": "zai_glm_4_6-no-focus-chain.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/zai_glm_4_6-no-focus-chain.snap",
+      "summary": "zai_glm_4_6-no-focus-chain.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/prompts/system-prompt/__tests__/__snapshots__/zai_glm_4_6-no-mcp.snap",
+      "type": "file",
+      "name": "zai_glm_4_6-no-mcp.snap",
+      "filePath": "src/core/prompts/system-prompt/__tests__/__snapshots__/zai_glm_4_6-no-mcp.snap",
+      "summary": "zai_glm_4_6-no-mcp.snap",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/posttooluse/error/PostToolUse",
+      "type": "file",
+      "name": "PostToolUse",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/posttooluse/error/PostToolUse",
+      "summary": "PostToolUse",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/posttooluse/success/PostToolUse",
+      "type": "file",
+      "name": "PostToolUse",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/posttooluse/success/PostToolUse",
+      "summary": "PostToolUse",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/pretooluse/blocking/PreToolUse",
+      "type": "file",
+      "name": "PreToolUse",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/pretooluse/blocking/PreToolUse",
+      "summary": "PreToolUse",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/pretooluse/context-injection/PreToolUse",
+      "type": "file",
+      "name": "PreToolUse",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/pretooluse/context-injection/PreToolUse",
+      "summary": "PreToolUse",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/pretooluse/error/PreToolUse",
+      "type": "file",
+      "name": "PreToolUse",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/pretooluse/error/PreToolUse",
+      "summary": "PreToolUse",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/pretooluse/success/PreToolUse",
+      "type": "file",
+      "name": "PreToolUse",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/pretooluse/success/PreToolUse",
+      "summary": "PreToolUse",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskcancel/error/TaskCancel",
+      "type": "file",
+      "name": "TaskCancel",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskcancel/error/TaskCancel",
+      "summary": "TaskCancel",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskcancel/false-no-error/TaskCancel",
+      "type": "file",
+      "name": "TaskCancel",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskcancel/false-no-error/TaskCancel",
+      "summary": "TaskCancel",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskcancel/false-with-error/TaskCancel",
+      "type": "file",
+      "name": "TaskCancel",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskcancel/false-with-error/TaskCancel",
+      "summary": "TaskCancel",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskcancel/true-no-error/TaskCancel",
+      "type": "file",
+      "name": "TaskCancel",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskcancel/true-no-error/TaskCancel",
+      "summary": "TaskCancel",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskcancel/true-with-error/TaskCancel",
+      "type": "file",
+      "name": "TaskCancel",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskcancel/true-with-error/TaskCancel",
+      "summary": "TaskCancel",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskcomplete/context-injection/TaskComplete",
+      "type": "file",
+      "name": "TaskComplete",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskcomplete/context-injection/TaskComplete",
+      "summary": "TaskComplete",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskcomplete/error/TaskComplete",
+      "type": "file",
+      "name": "TaskComplete",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskcomplete/error/TaskComplete",
+      "summary": "TaskComplete",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskcomplete/success/TaskComplete",
+      "type": "file",
+      "name": "TaskComplete",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskcomplete/success/TaskComplete",
+      "summary": "TaskComplete",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/context-deleted/TaskResume",
+      "type": "file",
+      "name": "TaskResume",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskresume/context-deleted/TaskResume",
+      "summary": "TaskResume",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/context-injection/TaskResume",
+      "type": "file",
+      "name": "TaskResume",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskresume/context-injection/TaskResume",
+      "summary": "TaskResume",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/error/TaskResume",
+      "type": "file",
+      "name": "TaskResume",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskresume/error/TaskResume",
+      "summary": "TaskResume",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/long-pause/TaskResume",
+      "type": "file",
+      "name": "TaskResume",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskresume/long-pause/TaskResume",
+      "summary": "TaskResume",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/message-count/TaskResume",
+      "type": "file",
+      "name": "TaskResume",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskresume/message-count/TaskResume",
+      "summary": "TaskResume",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/recent-resume/TaskResume",
+      "type": "file",
+      "name": "TaskResume",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskresume/recent-resume/TaskResume",
+      "summary": "TaskResume",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/success/TaskResume",
+      "type": "file",
+      "name": "TaskResume",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskresume/success/TaskResume",
+      "summary": "TaskResume",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskstart/blocking/TaskStart",
+      "type": "file",
+      "name": "TaskStart",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskstart/blocking/TaskStart",
+      "summary": "TaskStart",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskstart/error/TaskStart",
+      "type": "file",
+      "name": "TaskStart",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskstart/error/TaskStart",
+      "summary": "TaskStart",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/taskstart/success/TaskStart",
+      "type": "file",
+      "name": "TaskStart",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/taskstart/success/TaskStart",
+      "summary": "TaskStart",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/blocking/UserPromptSubmit",
+      "type": "file",
+      "name": "UserPromptSubmit",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/blocking/UserPromptSubmit",
+      "summary": "UserPromptSubmit",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/context-injection/UserPromptSubmit",
+      "type": "file",
+      "name": "UserPromptSubmit",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/context-injection/UserPromptSubmit",
+      "summary": "UserPromptSubmit",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/empty-prompt/UserPromptSubmit",
+      "type": "file",
+      "name": "UserPromptSubmit",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/empty-prompt/UserPromptSubmit",
+      "summary": "UserPromptSubmit",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/error/UserPromptSubmit",
+      "type": "file",
+      "name": "UserPromptSubmit",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/error/UserPromptSubmit",
+      "summary": "UserPromptSubmit",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/large-prompt/UserPromptSubmit",
+      "type": "file",
+      "name": "UserPromptSubmit",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/large-prompt/UserPromptSubmit",
+      "summary": "UserPromptSubmit",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/malformed-json/UserPromptSubmit",
+      "type": "file",
+      "name": "UserPromptSubmit",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/malformed-json/UserPromptSubmit",
+      "summary": "UserPromptSubmit",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/multiline/UserPromptSubmit",
+      "type": "file",
+      "name": "UserPromptSubmit",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/multiline/UserPromptSubmit",
+      "summary": "UserPromptSubmit",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/special-chars/UserPromptSubmit",
+      "type": "file",
+      "name": "UserPromptSubmit",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/special-chars/UserPromptSubmit",
+      "summary": "UserPromptSubmit",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/success/UserPromptSubmit",
+      "type": "file",
+      "name": "UserPromptSubmit",
+      "filePath": "src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/success/UserPromptSubmit",
+      "summary": "UserPromptSubmit",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:.vscode-test.mjs",
+      "type": "file",
+      "name": ".vscode-test.mjs",
+      "filePath": ".vscode-test.mjs",
+      "summary": "This file configures VS Code extension tests using the @vscode/test-cli package, defining test file patterns, Mocha options, workspace folder, and launch arguments.",
+      "tags": [
+        "vscode",
+        "testing",
+        "configuration",
+        "mocha",
+        "test-cli"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:playwright.config.ts",
+      "type": "file",
+      "name": "playwright.config.ts",
+      "filePath": "playwright.config.ts",
+      "summary": "Configures Playwright for end-to-end testing of VS Code, setting CI-aware timeouts, retries, and a two-project test pipeline.",
+      "tags": [
+        "playwright",
+        "config",
+        "e2e",
+        "testing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:test-setup.js",
+      "type": "file",
+      "name": "test-setup.js",
+      "filePath": "test-setup.js",
+      "summary": "Configures TypeScript path aliases for test execution by mapping 'src' to 'out/src' and mocks the '@google/genai' module to avoid ESM compatibility issues.",
+      "tags": [
+        "test setup",
+        "path aliases",
+        "module mocking",
+        "TypeScript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:esbuild.mjs",
+      "type": "file",
+      "name": "esbuild.mjs",
+      "filePath": "esbuild.mjs",
+      "summary": "This ESBuild configuration script builds a VS Code extension with support for production, watch, standalone, and e2e modes, including custom alias resolution and WASM file copying.",
+      "tags": [
+        "build",
+        "esbuild",
+        "vscode",
+        "extension",
+        "wasm"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:esbuild.mjs:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "esbuild.mjs",
+      "lineRange": [
+        220,
+        229
+      ],
+      "summary": "Determines the build config based on flags, then builds or watches the project.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:scripts/api-secrets-parser.mjs",
+      "type": "file",
+      "name": "api-secrets-parser.mjs",
+      "filePath": "scripts/api-secrets-parser.mjs",
+      "summary": "Parses the ApiHandlerSecrets TypeScript interface from api.ts to automatically discover API key fields for all providers, eliminating manual maintenance of provider-to-API-key mappings.",
+      "tags": [
+        "parser",
+        "secrets",
+        "api",
+        "utility",
+        "regex"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/api-secrets-parser.mjs:parseApiHandlerSecrets",
+      "type": "function",
+      "name": "parseApiHandlerSecrets",
+      "filePath": "scripts/api-secrets-parser.mjs",
+      "lineRange": [
+        18,
+        47
+      ],
+      "summary": "Extracts field definitions from the ApiHandlerSecrets interface using regex and returns a map of field names to metadata.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/api-secrets-parser.mjs:mapProviderToApiKeys",
+      "type": "function",
+      "name": "mapProviderToApiKeys",
+      "filePath": "scripts/api-secrets-parser.mjs",
+      "lineRange": [
+        64,
+        96
+      ],
+      "summary": "Maps provider IDs to required API key fields by matching field names to provider patterns and applying special-case mappings.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/api-secrets-parser.mjs:extractProviderFromFieldName",
+      "type": "function",
+      "name": "extractProviderFromFieldName",
+      "filePath": "scripts/api-secrets-parser.mjs",
+      "lineRange": [
+        105,
+        202
+      ],
+      "summary": "Determines the provider ID from an API key field name using pattern matching and normalization.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/api-secrets-parser.mjs:normalizeProviderName",
+      "type": "function",
+      "name": "normalizeProviderName",
+      "filePath": "scripts/api-secrets-parser.mjs",
+      "lineRange": [
+        210,
+        232
+      ],
+      "summary": "Converts a camelCase provider part to a kebab-case provider ID, handling special cases.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/api-secrets-parser.mjs:applySpecialCaseMappings",
+      "type": "function",
+      "name": "applySpecialCaseMappings",
+      "filePath": "scripts/api-secrets-parser.mjs",
+      "lineRange": [
+        241,
+        282
+      ],
+      "summary": "Applies special-case field mappings for providers like Bedrock and SAP AI Core that require multiple fields.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/api-secrets-parser.mjs:generateApiKeyDisplayName",
+      "type": "function",
+      "name": "generateApiKeyDisplayName",
+      "filePath": "scripts/api-secrets-parser.mjs",
+      "lineRange": [
+        291,
+        343
+      ],
+      "summary": "Generates a human-readable display name from a camelCase or special field name.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/api-secrets-parser.mjs:validateApiKeyMappings",
+      "type": "function",
+      "name": "validateApiKeyMappings",
+      "filePath": "scripts/api-secrets-parser.mjs",
+      "lineRange": [
+        352,
+        375
+      ],
+      "summary": "Validates that all providers have at least one API key field mapped and returns warnings for unmapped providers.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/build-tests.js",
+      "type": "file",
+      "name": "build-tests.js",
+      "filePath": "scripts/build-tests.js",
+      "summary": "This script builds test source files using esbuild with optional watch mode and compiles TypeScript with a separate test configuration.",
+      "tags": [
+        "build",
+        "test",
+        "esbuild",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/build-tests.js:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "scripts/build-tests.js",
+      "lineRange": [
+        44,
+        54
+      ],
+      "summary": "Creates an esbuild context for the test source configuration and either watches for changes or rebuilds and disposes of the context.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/build-proto.mjs",
+      "type": "file",
+      "name": "build-proto.mjs",
+      "filePath": "scripts/build-proto.mjs",
+      "summary": "This script compiles Protocol Buffers into TypeScript and JavaScript code, generating service definitions and client implementations for gRPC and Nice-gRPC, while also setting up build prerequisites.",
+      "tags": [
+        "build",
+        "protobuf",
+        "gRPC",
+        "typeScript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/build-proto.mjs:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "scripts/build-proto.mjs",
+      "lineRange": [
+        50,
+        55
+      ],
+      "summary": "Orchestrates cleanup, compilation, and generation of additional bridge and bus setup files.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/build-proto.mjs:compileProtos",
+      "type": "function",
+      "name": "compileProtos",
+      "filePath": "scripts/build-proto.mjs",
+      "lineRange": [
+        56,
+        95
+      ],
+      "summary": "Compiles all .proto files into TypeScript service definitions and a descriptor set.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/build-proto.mjs:tsProtoc",
+      "type": "function",
+      "name": "tsProtoc",
+      "filePath": "scripts/build-proto.mjs",
+      "lineRange": [
+        97,
+        113
+      ],
+      "summary": "Runs protoc with ts-proto plugin to generate TypeScript files in specified output directory.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/build-proto.mjs:cleanup",
+      "type": "function",
+      "name": "cleanup",
+      "filePath": "scripts/build-proto.mjs",
+      "lineRange": [
+        115,
+        167
+      ],
+      "summary": "Removes previously generated files and directories to ensure clean state.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/build-proto.mjs:checkAppleSiliconCompatibility",
+      "type": "function",
+      "name": "checkAppleSiliconCompatibility",
+      "filePath": "scripts/build-proto.mjs",
+      "lineRange": [
+        170,
+        197
+      ],
+      "summary": "Checks if Rosetta 2 is installed on Apple Silicon macOS, aborting if not.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/build-proto.mjs:log_verbose",
+      "type": "function",
+      "name": "log_verbose",
+      "filePath": "scripts/build-proto.mjs",
+      "lineRange": [
+        199,
+        203
+      ],
+      "summary": "Logs message only if verbose flag is set.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/download-ripgrep.mjs",
+      "type": "file",
+      "name": "download-ripgrep.mjs",
+      "filePath": "scripts/download-ripgrep.mjs",
+      "summary": "Downloads and extracts ripgrep binaries for multiple platforms (macOS, Linux, Windows) from GitHub releases, storing them in a dist-standalone/ripgrep-binaries directory.",
+      "tags": [
+        "utility",
+        "async",
+        "binary-download",
+        "ripgrep",
+        "build"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/download-ripgrep.mjs:downloadFile",
+      "type": "function",
+      "name": "downloadFile",
+      "filePath": "scripts/download-ripgrep.mjs",
+      "lineRange": [
+        65,
+        99
+      ],
+      "summary": "Downloads a file from a given URL to a local path, handling redirects and cleaning up on error.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/download-ripgrep.mjs:extractTarGz",
+      "type": "function",
+      "name": "extractTarGz",
+      "filePath": "scripts/download-ripgrep.mjs",
+      "lineRange": [
+        104,
+        115
+      ],
+      "summary": "Extracts a tar.gz archive to a destination directory, stripping the top-level directory.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/download-ripgrep.mjs:extractZip",
+      "type": "function",
+      "name": "extractZip",
+      "filePath": "scripts/download-ripgrep.mjs",
+      "lineRange": [
+        120,
+        159
+      ],
+      "summary": "Extracts a zip archive using the unzip command, moving files from a subdirectory to the destination.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/download-ripgrep.mjs:downloadRipgrepForPlatform",
+      "type": "function",
+      "name": "downloadRipgrepForPlatform",
+      "filePath": "scripts/download-ripgrep.mjs",
+      "lineRange": [
+        164,
+        207
+      ],
+      "summary": "Downloads, extracts, verifies, and cleans up ripgrep for a specific platform.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/download-ripgrep.mjs:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "scripts/download-ripgrep.mjs",
+      "lineRange": [
+        212,
+        255
+      ],
+      "summary": "Downloads ripgrep binaries for all configured platforms and prints a summary of success/failure.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/file-utils.mjs",
+      "type": "file",
+      "name": "file-utils.mjs",
+      "filePath": "scripts/file-utils.mjs",
+      "summary": "Provides asynchronous utility functions for file operations, including writing files with automatic directory creation and removing files/directories.",
+      "tags": [
+        "utility",
+        "async",
+        "file system",
+        "directory"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:scripts/file-utils.mjs:writeFileWithMkdirs",
+      "type": "function",
+      "name": "writeFileWithMkdirs",
+      "filePath": "scripts/file-utils.mjs",
+      "lineRange": [
+        6,
+        9
+      ],
+      "summary": "Writes contents to a file, creating any missing parent directories.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:scripts/file-utils.mjs:rmrf",
+      "type": "function",
+      "name": "rmrf",
+      "filePath": "scripts/file-utils.mjs",
+      "lineRange": [
+        11,
+        13
+      ],
+      "summary": "Recursively removes a file or directory, ignoring if it doesn't exist.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:scripts/file-utils.mjs:rmdir",
+      "type": "function",
+      "name": "rmdir",
+      "filePath": "scripts/file-utils.mjs",
+      "lineRange": [
+        18,
+        27
+      ],
+      "summary": "Removes an empty directory, silently skipping if it doesn't exist or is not empty.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:scripts/build-python-proto.mjs",
+      "type": "file",
+      "name": "build-python-proto.mjs",
+      "filePath": "scripts/build-python-proto.mjs",
+      "summary": "This script builds Python gRPC client code from proto files, including generating stubs, service wrappers, a connection manager, and a unified client class.",
+      "tags": [
+        "build",
+        "grpc",
+        "python",
+        "proto",
+        "code generation"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/build-python-proto.mjs:hasCommand",
+      "type": "function",
+      "name": "hasCommand",
+      "filePath": "scripts/build-python-proto.mjs",
+      "lineRange": [
+        16,
+        27
+      ],
+      "summary": "Checks if a command is available on the system PATH.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/build-python-proto.mjs:resolvePython",
+      "type": "function",
+      "name": "resolvePython",
+      "filePath": "scripts/build-python-proto.mjs",
+      "lineRange": [
+        29,
+        52
+      ],
+      "summary": "Resolves a usable Python interpreter, checking env var and common names.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/build-python-proto.mjs:checkGrpcTools",
+      "type": "function",
+      "name": "checkGrpcTools",
+      "filePath": "scripts/build-python-proto.mjs",
+      "lineRange": [
+        54,
+        61
+      ],
+      "summary": "Checks if grpc_tools Python package is installed.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/build-python-proto.mjs:ensureDir",
+      "type": "function",
+      "name": "ensureDir",
+      "filePath": "scripts/build-python-proto.mjs",
+      "lineRange": [
+        63,
+        65
+      ],
+      "summary": "Creates a directory if it doesn't exist.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/build-python-proto.mjs:ensureInitPy",
+      "type": "function",
+      "name": "ensureInitPy",
+      "filePath": "scripts/build-python-proto.mjs",
+      "lineRange": [
+        67,
+        73
+      ],
+      "summary": "Creates an empty __init__.py file in a directory if not present.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/build-python-proto.mjs:parseServicesWithFiles",
+      "type": "function",
+      "name": "parseServicesWithFiles",
+      "filePath": "scripts/build-python-proto.mjs",
+      "lineRange": [
+        80,
+        107
+      ],
+      "summary": "Parses proto files to extract service names, packages, and methods.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/build-python-proto.mjs:upperFirst",
+      "type": "function",
+      "name": "upperFirst",
+      "filePath": "scripts/build-python-proto.mjs",
+      "lineRange": [
+        109,
+        111
+      ],
+      "summary": "Capitalizes the first character of a string.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/build-python-proto.mjs:generateConnectionPy",
+      "type": "function",
+      "name": "generateConnectionPy",
+      "filePath": "scripts/build-python-proto.mjs",
+      "lineRange": [
+        113,
+        149
+      ],
+      "summary": "Generates a connection manager module for gRPC channels.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/build-python-proto.mjs:generateClineClientPy",
+      "type": "function",
+      "name": "generateClineClientPy",
+      "filePath": "scripts/build-python-proto.mjs",
+      "lineRange": [
+        151,
+        228
+      ],
+      "summary": "Generates a unified client class that composes per-service wrappers.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/build-python-proto.mjs:generatePythonClient",
+      "type": "function",
+      "name": "generatePythonClient",
+      "filePath": "scripts/build-python-proto.mjs",
+      "lineRange": [
+        230,
+        249
+      ],
+      "summary": "Orchestrates generation of the entire Python client package.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/build-python-proto.mjs:generateServiceClientsPy",
+      "type": "function",
+      "name": "generateServiceClientsPy",
+      "filePath": "scripts/build-python-proto.mjs",
+      "lineRange": [
+        251,
+        303
+      ],
+      "summary": "Generates per-service client wrapper modules.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/build-python-proto.mjs:generatePyproject",
+      "type": "function",
+      "name": "generatePyproject",
+      "filePath": "scripts/build-python-proto.mjs",
+      "lineRange": [
+        305,
+        325
+      ],
+      "summary": "Generates a minimal pyproject.toml for the generated package.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/build-python-proto.mjs:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "scripts/build-python-proto.mjs",
+      "lineRange": [
+        327,
+        419
+      ],
+      "summary": "Main entry point that orchestrates the complete build process.",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:scripts/generate-host-bridge-client.mjs",
+      "type": "file",
+      "name": "generate-host-bridge-client.mjs",
+      "filePath": "scripts/generate-host-bridge-client.mjs",
+      "summary": "Generates TypeScript client interfaces, external client implementations using nice-grpc, and VSCode handler config maps for host bridge services from a protobuf descriptor.",
+      "tags": [
+        "code generation",
+        "protobuf",
+        "grpc"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/generate-host-bridge-client.mjs:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "scripts/generate-host-bridge-client.mjs",
+      "lineRange": [
+        18,
+        29
+      ],
+      "summary": "Loads host services from proto descriptor and generates three output files.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/generate-host-bridge-client.mjs:generateTypesFile",
+      "type": "function",
+      "name": "generateTypesFile",
+      "filePath": "scripts/generate-host-bridge-client.mjs",
+      "lineRange": [
+        34,
+        49
+      ],
+      "summary": "Generates TypeScript client interface definitions for all host services.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/generate-host-bridge-client.mjs:generateClientInterfaceType",
+      "type": "function",
+      "name": "generateClientInterfaceType",
+      "filePath": "scripts/generate-host-bridge-client.mjs",
+      "lineRange": [
+        54,
+        78
+      ],
+      "summary": "Generates a single client interface for a given service with unary and streaming method signatures.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/generate-host-bridge-client.mjs:generateExternalClientFile",
+      "type": "function",
+      "name": "generateExternalClientFile",
+      "filePath": "scripts/generate-host-bridge-client.mjs",
+      "lineRange": [
+        83,
+        110
+      ],
+      "summary": "Generates external client implementations using nice-grpc for all host services.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/generate-host-bridge-client.mjs:generateExternalClientSetup",
+      "type": "function",
+      "name": "generateExternalClientSetup",
+      "filePath": "scripts/generate-host-bridge-client.mjs",
+      "lineRange": [
+        115,
+        171
+      ],
+      "summary": "Generates a client implementation class for a single service that extends BaseGrpcClient.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/generate-host-bridge-client.mjs:generateVscodeClientFile",
+      "type": "function",
+      "name": "generateVscodeClientFile",
+      "filePath": "scripts/generate-host-bridge-client.mjs",
+      "lineRange": [
+        176,
+        213
+      ],
+      "summary": "Generates VSCode client setup with handler config map and service registries.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/generate-host-bridge-client.mjs:generateVscodeClientImplementation",
+      "type": "function",
+      "name": "generateVscodeClientImplementation",
+      "filePath": "scripts/generate-host-bridge-client.mjs",
+      "lineRange": [
+        215,
+        235
+      ],
+      "summary": "Generates service registry setup code for a single VSCode host service.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:scripts/generate-stubs.js",
+      "type": "file",
+      "name": "generate-stubs.js",
+      "filePath": "scripts/generate-stubs.js",
+      "summary": "Generates JavaScript stubs for the VS Code API by parsing TypeScript type definitions and producing a runtime stub module.",
+      "tags": [
+        "stub generation",
+        "vscode",
+        "code generation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/generate-stubs.js:traverse",
+      "type": "function",
+      "name": "traverse",
+      "filePath": "scripts/generate-stubs.js",
+      "lineRange": [
+        5,
+        55
+      ],
+      "summary": "Recursively walks TypeScript AST statements and generates stub code for modules, functions, enums, variables, and classes.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/generate-stubs.js:mapReturn",
+      "type": "function",
+      "name": "mapReturn",
+      "filePath": "scripts/generate-stubs.js",
+      "lineRange": [
+        57,
+        80
+      ],
+      "summary": "Maps a TypeScript return type string to a corresponding JavaScript stub return statement.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/generate-stubs.js:sanitizeParam",
+      "type": "function",
+      "name": "sanitizeParam",
+      "filePath": "scripts/generate-stubs.js",
+      "lineRange": [
+        82,
+        84
+      ],
+      "summary": "Returns the parameter name or a default placeholder if the name is empty.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:scripts/generate-stubs.js:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "scripts/generate-stubs.js",
+      "lineRange": [
+        86,
+        105
+      ],
+      "summary": "Entry point that reads the VS Code type definitions, generates stubs, and writes them to a file.",
+      "tags": [],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:esbuild.mjs",
+      "target": "function:esbuild.mjs:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/api-secrets-parser.mjs",
+      "target": "function:scripts/api-secrets-parser.mjs:parseApiHandlerSecrets",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/api-secrets-parser.mjs",
+      "target": "function:scripts/api-secrets-parser.mjs:mapProviderToApiKeys",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/api-secrets-parser.mjs",
+      "target": "function:scripts/api-secrets-parser.mjs:extractProviderFromFieldName",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/api-secrets-parser.mjs",
+      "target": "function:scripts/api-secrets-parser.mjs:normalizeProviderName",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/api-secrets-parser.mjs",
+      "target": "function:scripts/api-secrets-parser.mjs:applySpecialCaseMappings",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/api-secrets-parser.mjs",
+      "target": "function:scripts/api-secrets-parser.mjs:generateApiKeyDisplayName",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/api-secrets-parser.mjs",
+      "target": "function:scripts/api-secrets-parser.mjs:validateApiKeyMappings",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-tests.js",
+      "target": "function:scripts/build-tests.js:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-proto.mjs",
+      "target": "function:scripts/build-proto.mjs:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-proto.mjs",
+      "target": "function:scripts/build-proto.mjs:compileProtos",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-proto.mjs",
+      "target": "function:scripts/build-proto.mjs:tsProtoc",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-proto.mjs",
+      "target": "function:scripts/build-proto.mjs:cleanup",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-proto.mjs",
+      "target": "function:scripts/build-proto.mjs:checkAppleSiliconCompatibility",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-proto.mjs",
+      "target": "function:scripts/build-proto.mjs:log_verbose",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/download-ripgrep.mjs",
+      "target": "function:scripts/download-ripgrep.mjs:downloadFile",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/download-ripgrep.mjs",
+      "target": "function:scripts/download-ripgrep.mjs:extractTarGz",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/download-ripgrep.mjs",
+      "target": "function:scripts/download-ripgrep.mjs:extractZip",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/download-ripgrep.mjs",
+      "target": "function:scripts/download-ripgrep.mjs:downloadRipgrepForPlatform",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/download-ripgrep.mjs",
+      "target": "function:scripts/download-ripgrep.mjs:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/file-utils.mjs",
+      "target": "function:scripts/file-utils.mjs:writeFileWithMkdirs",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/file-utils.mjs",
+      "target": "function:scripts/file-utils.mjs:rmrf",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/file-utils.mjs",
+      "target": "function:scripts/file-utils.mjs:rmdir",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-python-proto.mjs",
+      "target": "function:scripts/build-python-proto.mjs:hasCommand",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-python-proto.mjs",
+      "target": "function:scripts/build-python-proto.mjs:resolvePython",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-python-proto.mjs",
+      "target": "function:scripts/build-python-proto.mjs:checkGrpcTools",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-python-proto.mjs",
+      "target": "function:scripts/build-python-proto.mjs:ensureDir",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-python-proto.mjs",
+      "target": "function:scripts/build-python-proto.mjs:ensureInitPy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-python-proto.mjs",
+      "target": "function:scripts/build-python-proto.mjs:parseServicesWithFiles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-python-proto.mjs",
+      "target": "function:scripts/build-python-proto.mjs:upperFirst",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-python-proto.mjs",
+      "target": "function:scripts/build-python-proto.mjs:generateConnectionPy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-python-proto.mjs",
+      "target": "function:scripts/build-python-proto.mjs:generateClineClientPy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-python-proto.mjs",
+      "target": "function:scripts/build-python-proto.mjs:generatePythonClient",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-python-proto.mjs",
+      "target": "function:scripts/build-python-proto.mjs:generateServiceClientsPy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-python-proto.mjs",
+      "target": "function:scripts/build-python-proto.mjs:generatePyproject",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-python-proto.mjs",
+      "target": "function:scripts/build-python-proto.mjs:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/generate-host-bridge-client.mjs",
+      "target": "function:scripts/generate-host-bridge-client.mjs:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/generate-host-bridge-client.mjs",
+      "target": "function:scripts/generate-host-bridge-client.mjs:generateTypesFile",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/generate-host-bridge-client.mjs",
+      "target": "function:scripts/generate-host-bridge-client.mjs:generateClientInterfaceType",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/generate-host-bridge-client.mjs",
+      "target": "function:scripts/generate-host-bridge-client.mjs:generateExternalClientFile",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/generate-host-bridge-client.mjs",
+      "target": "function:scripts/generate-host-bridge-client.mjs:generateExternalClientSetup",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/generate-host-bridge-client.mjs",
+      "target": "function:scripts/generate-host-bridge-client.mjs:generateVscodeClientFile",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/generate-host-bridge-client.mjs",
+      "target": "function:scripts/generate-host-bridge-client.mjs:generateVscodeClientImplementation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/generate-stubs.js",
+      "target": "function:scripts/generate-stubs.js:traverse",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/generate-stubs.js",
+      "target": "function:scripts/generate-stubs.js:mapReturn",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/generate-stubs.js",
+      "target": "function:scripts/generate-stubs.js:sanitizeParam",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/generate-stubs.js",
+      "target": "function:scripts/generate-stubs.js:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/build-proto.mjs",
+      "target": "file:scripts/file-utils.mjs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:scripts/build-proto.mjs",
+      "target": "file:scripts/generate-host-bridge-client.mjs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:scripts/generate-host-bridge-client.mjs",
+      "target": "file:scripts/file-utils.mjs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:core",
+      "name": "Core",
+      "description": "Core application files",
+      "nodeIds": [
+        "file:.DS_Store",
+        "file:.env.example",
+        "file:.mocharc.json",
+        "file:.mocharc.knowledge.json",
+        "file:.nycrc.unit.json",
+        "file:.vscodeignore",
+        "file:README.marketplace.md",
+        "file:README.md",
+        "file:biome.jsonc",
+        "file:buf.yaml",
+        "file:endpoints.json",
+        "file:knip.json",
+        "file:package.json",
+        "file:skills-lock.json",
+        "file:tsconfig.json",
+        "file:tsconfig.test.json",
+        "file:tsconfig.unit-test.json",
+        "file:proto/descriptor_set.pb",
+        "file:scripts/add-endpoints-to-jetbrains.sh",
+        "file:scripts/add-endpoints-to-vsix.sh",
+        "file:scripts/get-vscode-usages.sh",
+        "file:scripts/proto-lint.sh",
+        "file:scripts/run-extension-host.sh",
+        "file:scripts/runclinecore.sh",
+        "file:testing-platform/README.md",
+        "file:testing-platform/package.json",
+        "file:testing-platform/tsconfig.json",
+        "file:webview-ui/components.json",
+        "file:webview-ui/index.html",
+        "file:webview-ui/package.json",
+        "file:webview-ui/tsconfig.app.json",
+        "file:webview-ui/tsconfig.json",
+        "file:webview-ui/tsconfig.node.json",
+        "file:dist-standalone/proto/descriptor_set.pb",
+        "file:proto/cline/account.proto",
+        "file:proto/cline/browser.proto",
+        "file:proto/cline/checkpoints.proto",
+        "file:proto/cline/commands.proto",
+        "file:proto/cline/common.proto",
+        "file:proto/cline/file.proto",
+        "file:proto/cline/hooks.proto",
+        "file:proto/cline/mcp.proto",
+        "file:proto/cline/models.proto",
+        "file:proto/cline/oca_account.proto",
+        "file:proto/cline/slash.proto",
+        "file:proto/cline/state.proto",
+        "file:proto/cline/task.proto",
+        "file:proto/cline/ui.proto",
+        "file:proto/cline/web.proto",
+        "file:proto/cline/worktree.proto",
+        "file:proto/host/diff.proto",
+        "file:proto/host/env.proto",
+        "file:proto/host/testing.proto",
+        "file:proto/host/window.proto",
+        "file:proto/host/workspace.proto",
+        "file:src/core/README.md",
+        "file:src/exports/README.md",
+        "file:standalone/runtime-files/package.json",
+        "file:webview-ui/src/index.css",
+        "file:webview-ui/src/main.css",
+        "file:webview-ui/src/theme.css",
+        "file:src/dev/grit/console-log.grit",
+        "file:src/dev/grit/process-env.grit",
+        "file:src/dev/grit/use-cache-service.grit",
+        "file:src/dev/grit/vscode-api.grit",
+        "file:standalone/runtime-files/vscode/package.json",
+        "file:src/core/prompts/system-prompt/CONTRIBUTING.md",
+        "file:src/core/prompts/system-prompt/README.md",
+        "file:src/samples/cli/github-integration/cline-responder.yml",
+        "file:src/samples/cli/github-issue-rca/analyze-issue.sh",
+        "file:src/core/prompts/system-prompt/tools/README.md",
+        "file:.vscode-test.mjs",
+        "file:playwright.config.ts",
+        "file:test-setup.js",
+        "file:esbuild.mjs",
+        "file:scripts/api-secrets-parser.mjs",
+        "file:scripts/build-tests.js",
+        "file:scripts/build-proto.mjs",
+        "file:scripts/download-ripgrep.mjs",
+        "file:scripts/file-utils.mjs",
+        "file:scripts/build-python-proto.mjs",
+        "file:scripts/generate-host-bridge-client.mjs",
+        "file:scripts/generate-stubs.js"
+      ]
+    },
+    {
+      "id": "layer:test-layer",
+      "name": "Test Layer",
+      "description": "Test files and test utilities",
+      "nodeIds": [
+        "file:tests/specs/grpc_recorded_session_single_root.json",
+        "file:src/test/e2e/README.md",
+        "file:src/test/e2e/fixtures/multiroots.code-workspace",
+        "file:src/core/hooks/__tests__/fixtures/README.md",
+        "file:src/core/prompts/system-prompt/__tests__/README.md",
+        "file:src/test/e2e/fixtures/workspace/README.md",
+        "file:src/test/e2e/fixtures/workspace/index.html",
+        "file:src/test/e2e/fixtures/workspace_2/README.md",
+        "file:src/core/hooks/__tests__/fixtures/template/HookName",
+        "file:src/core/hooks/__tests__/fixtures/template/README.md",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/anthropic_claude_sonnet_4-basic.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/anthropic_claude_sonnet_4-no-browser.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/anthropic_claude_sonnet_4-no-focus-chain.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/anthropic_claude_sonnet_4-no-mcp.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_claude_4_5_sonnet-basic.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_claude_4_5_sonnet-no-browser.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_claude_4_5_sonnet-no-focus-chain.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_claude_4_5_sonnet-no-mcp.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_devstral-basic.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_devstral-no-browser.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_devstral-no-focus-chain.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_devstral-no-mcp.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/cline_native_next_gen.tools.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/lmstudio_qwen3_coder-basic.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/lmstudio_qwen3_coder-no-browser.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/lmstudio_qwen3_coder-no-focus-chain.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/lmstudio_qwen3_coder-no-mcp.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/old-generic-with-focus.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/old-generic-without-focus.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/old-next-gen-with-focus.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/old-next-gen-without-focus.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_3-basic.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_3-no-browser.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_3-no-focus-chain.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_3-no-mcp.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5-basic.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5-no-browser.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5-no-focus-chain.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5-no-mcp.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1-basic.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1-no-browser.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1-no-focus-chain.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1-no-mcp.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_1_native.tools.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_codex-basic.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_codex-no-browser.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_codex-no-focus-chain.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_codex-no-mcp.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openai_gpt_5_native.tools.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openrouter_arcee_ai_trinity_large_preview-basic.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openrouter_arcee_ai_trinity_large_preview-no-browser.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openrouter_arcee_ai_trinity_large_preview-no-focus-chain.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/openrouter_arcee_ai_trinity_large_preview-no-mcp.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/section-title-comparison.json",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/test_hermes_4-basic.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/test_hermes_4-no-browser.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/test_hermes_4-no-focus-chain.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/test_hermes_4-no-mcp.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini3.tools.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-basic.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-no-browser.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-no-focus-chain.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-no-mcp.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/vertex_gemini_3-parallel-tools.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/zai_glm_4_6-basic.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/zai_glm_4_6-no-browser.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/zai_glm_4_6-no-focus-chain.snap",
+        "file:src/core/prompts/system-prompt/__tests__/__snapshots__/zai_glm_4_6-no-mcp.snap",
+        "file:src/core/hooks/__tests__/fixtures/hooks/posttooluse/error/PostToolUse",
+        "file:src/core/hooks/__tests__/fixtures/hooks/posttooluse/success/PostToolUse",
+        "file:src/core/hooks/__tests__/fixtures/hooks/pretooluse/blocking/PreToolUse",
+        "file:src/core/hooks/__tests__/fixtures/hooks/pretooluse/context-injection/PreToolUse",
+        "file:src/core/hooks/__tests__/fixtures/hooks/pretooluse/error/PreToolUse",
+        "file:src/core/hooks/__tests__/fixtures/hooks/pretooluse/success/PreToolUse",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskcancel/error/TaskCancel",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskcancel/false-no-error/TaskCancel",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskcancel/false-with-error/TaskCancel",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskcancel/true-no-error/TaskCancel",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskcancel/true-with-error/TaskCancel",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskcomplete/context-injection/TaskComplete",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskcomplete/error/TaskComplete",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskcomplete/success/TaskComplete",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/context-deleted/TaskResume",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/context-injection/TaskResume",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/error/TaskResume",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/long-pause/TaskResume",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/message-count/TaskResume",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/recent-resume/TaskResume",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskresume/success/TaskResume",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskstart/blocking/TaskStart",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskstart/error/TaskStart",
+        "file:src/core/hooks/__tests__/fixtures/hooks/taskstart/success/TaskStart",
+        "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/blocking/UserPromptSubmit",
+        "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/context-injection/UserPromptSubmit",
+        "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/empty-prompt/UserPromptSubmit",
+        "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/error/UserPromptSubmit",
+        "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/large-prompt/UserPromptSubmit",
+        "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/malformed-json/UserPromptSubmit",
+        "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/multiline/UserPromptSubmit",
+        "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/special-chars/UserPromptSubmit",
+        "file:src/core/hooks/__tests__/fixtures/hooks/userpromptsubmit/success/UserPromptSubmit"
+      ]
+    },
+    {
+      "id": "layer:utility-layer",
+      "name": "Utility Layer",
+      "description": "Shared utilities, helpers, and common libraries",
+      "nodeIds": [
+        "file:src/shared/providers/bedrock.json",
+        "file:src/shared/providers/providers.json",
+        "file:src/shared/providers/vertex.json"
+      ]
+    },
+    {
+      "id": "layer:configuration-layer",
+      "name": "Configuration Layer",
+      "description": "Application configuration and environment settings",
+      "nodeIds": [
+        "file:webview-ui/src/config/platform-configs.json"
+      ]
+    },
+    {
+      "id": "layer:ui-layer",
+      "name": "UI Layer",
+      "description": "User interface components and views",
+      "nodeIds": [
+        "file:webview-ui/src/components/common/codeblock-parser.css",
+        "file:webview-ui/src/components/kocode/KocodeChatView.css",
+        "file:webview-ui/src/components/mcp/RICH_MCP_TESTING.md",
+        "file:webview-ui/src/components/settings/README.md",
+        "file:webview-ui/src/components/kocode/workbench/KocodeWorkbenchView.css"
+      ]
+    }
+  ],
+  "tour": []
+}
