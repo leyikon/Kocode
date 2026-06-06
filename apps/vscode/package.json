@@ -210,6 +210,11 @@
 				"category": "Kocode"
 			},
 			{
+				"command": "cline.knowledge.toggleAutoUpdate",
+				"title": "切换知识图谱自动更新 (Toggle Knowledge Graph Auto Update)",
+				"category": "Kocode"
+			},
+			{
 				"command": "cline.knowledge.openProjectMap",
 				"title": "打开 Project Map (即将推出)",
 				"category": "Kocode"
@@ -401,7 +406,14 @@
 		},
 		"configuration": {
 			"title": "Kocode",
-			"properties": {}
+			"properties": {
+				"kocode.knowledge.autoUpdate": {
+					"type": "boolean",
+					"default": false,
+					"scope": "resource",
+					"description": "Automatically refresh the project knowledge graph after Git HEAD changes, such as commit, merge, rebase, or cherry-pick."
+				}
+			}
 		}
 	},
 	"scripts": {

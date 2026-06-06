@@ -33,6 +33,7 @@ const ClineCommands = {
 	// Project Knowledge Graph commands
 	KnowledgeAnalyze: prefix + ".knowledge.analyze",
 	KnowledgeRefresh: prefix + ".knowledge.refresh",
+	KnowledgeToggleAutoUpdate: `${prefix}.knowledge.toggleAutoUpdate`,
 	KnowledgeOpenProjectMap: prefix + ".knowledge.openProjectMap",
 }
 

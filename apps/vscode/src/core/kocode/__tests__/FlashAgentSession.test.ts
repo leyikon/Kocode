@@ -36,6 +36,13 @@ class MockFlashModelClient {
 	}
 }
 
+const idleDigestForApproval = {
+	status: "waiting" as const,
+	title: "確認待ち",
+	summary: "確認が必要にゃ。",
+	lastEventAt: 1,
+}
+
 describe("FlashAgentSession", () => {
 	it("returns social chat decisions without creating worker intent", async () => {
 		const flash = new FlashAgentSession(
@@ -102,5 +109,42 @@ describe("FlashAgentSession", () => {
 		if (intent.type === "worker_control") {
 			expect(intent.control.action).to.equal("cancel")
 		}
+	})
+
+	it("uses the Flash model to decide worker approvals", async () => {
+		const client = {
+			decide: async () => decision({}),
+			decideApproval: async () => ({ approve: true, reply: "進めるにゃ。", reason: "in_scope" }),
+		}
+		const flash = new FlashAgentSession(client as any, new InMemoryKocodeMemoryStore())
+
+		const result = await flash.decideWorkerApproval("command", "npm test", idleDigestForApproval)
+
+		expect(result.approve).to.equal(true)
+		expect(result.reply).to.equal("進めるにゃ。")
+	})
+
+	it("falls back to allow when the approval model is unavailable", async () => {
+		// decideApproval 未実装のクライアント：Worker を止めない安全側（approve=true）に倒す。
+		const client = { decide: async () => decision({}) }
+		const flash = new FlashAgentSession(client as any, new InMemoryKocodeMemoryStore())
+
+		const result = await flash.decideWorkerApproval("tool", "edit file", idleDigestForApproval)
+
+		expect(result.approve).to.equal(true)
+	})
+
+	it("falls back to allow when the approval model throws", async () => {
+		const client = {
+			decide: async () => decision({}),
+			decideApproval: async () => {
+				throw new Error("relay down")
+			},
+		}
+		const flash = new FlashAgentSession(client as any, new InMemoryKocodeMemoryStore())
+
+		const result = await flash.decideWorkerApproval("command", "rm -rf build", idleDigestForApproval)
+
+		expect(result.approve).to.equal(true)
 	})
 })

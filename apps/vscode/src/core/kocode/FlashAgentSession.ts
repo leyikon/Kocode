@@ -1,21 +1,29 @@
 import type { KocodeChatMessage, TaskSpec, TaskSpecPatch, WorkerControlRequest, WorkerDigest, WorkerEvent } from "@shared/kocode"
-import { FlashModelClient, type FlashModelDecision, type FlashWorkerUpdateReason } from "./FlashModelClient"
+import {
+    FlashModelClient,
+    type FlashApprovalContext,
+    type FlashApprovalDecision,
+    type FlashModelDecision,
+    type FlashWorkerUpdateReason
+} from "./FlashModelClient"
 import { fallbackClassify } from "./HeuristicClassifier"
 import {
-	createDefaultMemory,
-	FileKocodeMemoryStore,
-	type KocodeMemory,
-	KocodeMemoryMutators,
-	type KocodeMemoryPersistence,
-	memoryToPromptText,
+    createDefaultMemory,
+    FileKocodeMemoryStore,
+    type KocodeMemory,
+    KocodeMemoryMutators,
+    type KocodeMemoryPersistence,
+    memoryToPromptText,
 } from "./KocodeMemoryStore"
 import { KocodeTrace } from "./KocodeTrace"
 
-type FlashDecisionClient = Pick<FlashModelClient, "decide"> & Partial<Pick<FlashModelClient, "composeWorkerUpdate">>
+type FlashDecisionClient = Pick<FlashModelClient, "decide"> &
+	Partial<Pick<FlashModelClient, "composeWorkerUpdate" | "decideApproval">>
 
 export type FlashIntent =
 	| { type: "social_chat"; reply: string }
 	| { type: "status_question"; reply: string }
+	| { type: "explanation_request"; reply: string; decision: FlashModelDecision }
 	| { type: "new_task"; decision: FlashModelDecision }
 	| { type: "extend_task"; decision: FlashModelDecision; patch: TaskSpecPatch; reply: string }
 	| { type: "task_revision"; patch: TaskSpecPatch; reply: string }
@@ -100,6 +108,11 @@ export class FlashAgentSession {
 		return decision?.reply || "まかせてにゃ、ボス。まずは小さく整理して、裏で作業を始めるにゃ。"
 	}
 
+	/** Reply-string variant for callers that already extracted the model reply. */
+	workerStartedMessageFromReply(reply?: string): string {
+		return reply?.trim() || "まかせてにゃ、ボス。まずは小さく整理して、裏で作業を始めるにゃ。"
+	}
+
 	revisionQueuedMessage(reply?: string): string {
 		return reply || "追加の希望、ちゃんとメモしたにゃ。次の整理タイミングで反映するにゃ。"
 	}
@@ -146,6 +159,59 @@ export class FlashAgentSession {
 		return update.shouldNotify && update.reply.trim() ? update.reply.trim() : undefined
 	}
 
+	/**
+	 * Worker（Cline）が承認待ちで止まった時、Flash Agent として許可/拒否を判断する。
+	 * 別系統のモデルは立てず、Flash Agent のモデル（同一エンドポイント）と記憶をそのまま使う。
+	 * モデルが使えない／失敗した場合は、作業を前に進める安全側として approve=true にフォールバックする。
+	 */
+	async decideWorkerApproval(
+		askType: string,
+		askText: string,
+		workerDigest: WorkerDigest,
+		taskSpec?: TaskSpec,
+		recentWorkerEvents: WorkerEvent[] = [],
+	): Promise<FlashApprovalDecision> {
+		await this.memoryReady
+		const fallback: FlashApprovalDecision = {
+			approve: true,
+			reply: "そのまま進めるにゃ、ボス。",
+			reason: "flash_approval_unavailable_fallback_allow",
+		}
+		if (!this.modelClient.decideApproval) {
+			return fallback
+		}
+		KocodeTrace.log("flash_approval_start", {
+			askType,
+			workerStatus: workerDigest.status,
+			taskStatus: taskSpec?.status,
+			taskGoal: taskSpec?.goal,
+			recentWorkerEvents: recentWorkerEvents.length,
+		})
+		try {
+			const context: FlashApprovalContext = {
+				projectMemory: memoryToPromptText(this.memory) || this.memory.projectSummary,
+				taskSpec,
+				workerDigest,
+				recentSocialSummary: this.memory.socialSummary,
+				recentWorkerEvents,
+				askType,
+				askText,
+			}
+			const decision = await this.modelClient.decideApproval(context)
+			KocodeTrace.log("flash_approval_result", {
+				askType,
+				approve: decision.approve,
+				reason: decision.reason,
+				reply: decision.reply,
+			})
+			return decision
+		} catch (error) {
+			KocodeTrace.error("flash_approval_failed", error, { askType })
+			// モデルが落ちても Worker を無限に止めない：前に進める方向でフォールバック。
+			return fallback
+		}
+	}
+
 	getMemorySnapshot(): KocodeMemory {
 		return this.memory
 	}
@@ -183,6 +249,8 @@ export class FlashAgentSession {
 				return { type: "social_chat", reply: decision.reply }
 			case "status_question":
 				return { type: "status_question", reply: decision.reply }
+			case "explanation_request":
+				return { type: "explanation_request", reply: decision.reply, decision }
 			case "new_task":
 				return { type: "new_task", decision }
 			case "extend_task": {
@@ -210,7 +278,9 @@ export class FlashAgentSession {
 				}
 			case "worker_control": {
 				const action = decision.workerControl.action ?? (hasActiveTask ? "append_context" : "replan")
-				const patchKind = decision.patch.kind ?? (action === "redirect" ? "reject_direction" : undefined)
+				const patchKind =
+					decision.patch.kind ??
+					(action === "redirect" ? "reject_direction" : action === "rollback_request" ? "request_rollback" : undefined)
 				const patch: TaskSpecPatch | undefined = patchKind
 					? {
 							kind: patchKind,
@@ -225,6 +295,12 @@ export class FlashAgentSession {
 						action,
 						reason: decision.workerControl.reason ?? originalText,
 						taskSpecPatch: patch,
+						rollback: decision.workerControl.rollback
+							? {
+									steps: decision.workerControl.rollback.steps ?? undefined,
+									restoreType: decision.workerControl.rollback.restoreType ?? undefined,
+								}
+							: undefined,
 					},
 					reply: decision.reply,
 				}

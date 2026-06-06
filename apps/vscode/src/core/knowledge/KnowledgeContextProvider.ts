@@ -18,6 +18,7 @@ import type { GraphNode, KnowledgeGraph } from "./vendor/types"
  */
 
 const SKELETON_MAX_ENTRIES = 60
+const MAX_TAGS_PER_NODE = 5
 
 export class KnowledgeContextProvider {
 	private readonly store: KnowledgeStore
@@ -68,24 +69,27 @@ export class KnowledgeContextProvider {
 		const lines: string[] = []
 		lines.push("## Project Knowledge Graph (Kocode)")
 		lines.push(
-			"以下是项目知识图谱检索到的相关上下文,用于减少自行探索。**结构事实为权威信息**(tree-sitter 提取),**语义摘要仅供参考**(便宜模型生成,可能不精确)。",
+			"現在のタスクに関連するプロジェクト知識グラフの抜粋です。**構造情報は authoritative**(tree-sitter 抽出)、**要約やタグは reference**(Kocode モデル生成、誤差あり)として扱ってください。",
 		)
 		lines.push("")
 
 		// 权威结构:节点与文件路径。
-		lines.push("### Relevant Files & Symbols (权威 / authoritative)")
+		lines.push("### Relevant Files & Symbols (authoritative structure, reference annotations)")
 		for (const node of context.nodes) {
 			const loc = node.filePath ? ` — ${node.filePath}${this.lineSuffix(node)}` : ""
 			lines.push(`- [${node.type}] ${node.name}${loc}`)
+			for (const metadataLine of this.annotationLines(node)) {
+				lines.push(`  - ${metadataLine}`)
+			}
 			if (node.summary) {
-				lines.push(`  - 摘要(参考): ${this.truncate(node.summary, 160)}`)
+				lines.push(`  - Summary(reference): ${this.truncate(node.summary, 160)}`)
 			}
 		}
 		lines.push("")
 
 		// 关系(权威结构)。
 		if (context.edges.length > 0) {
-			lines.push("### Relationships (权威 / authoritative)")
+			lines.push("### Relationships (authoritative structure)")
 			for (const edge of context.edges) {
 				lines.push(`- ${this.shortId(edge.source)} --${edge.type}--> ${this.shortId(edge.target)}`)
 			}
@@ -94,7 +98,7 @@ export class KnowledgeContextProvider {
 
 		// 架构层(参考)。
 		if (context.layers.length > 0) {
-			lines.push("### Architectural Layers (参考 / reference)")
+			lines.push("### Architectural Layers (reference)")
 			for (const layer of context.layers) {
 				lines.push(`- ${layer.name}: ${this.truncate(layer.description, 120)}`)
 			}
@@ -102,7 +106,7 @@ export class KnowledgeContextProvider {
 		}
 
 		lines.push(
-			`> 图谱共 ${graph.nodes.length} 个节点 / ${graph.edges.length} 条关系。如需更多结构信息,优先查图谱而非全量读代码。`,
+			`> Graph size: ${graph.nodes.length} nodes / ${graph.edges.length} edges. Use this as a navigation aid; read source files before making changes.`,
 		)
 		return lines.join("\n")
 	}
@@ -112,11 +116,13 @@ export class KnowledgeContextProvider {
 		const lines: string[] = []
 		lines.push("## Project Knowledge Graph (Kocode)")
 		if (reason === "missing") {
-			lines.push("项目知识图谱尚未生成。可运行命令 `kocode.knowledge.analyze` 生成,以便后续减少代码探索。")
+			lines.push("プロジェクト知識グラフはまだ生成されていません。必要なら `cline.knowledge.analyze` で生成できます。")
 		} else if (reason === "stale") {
-			lines.push("项目知识图谱已过时(与当前 git HEAD 不一致)。以下仅提供目录骨架;语义摘要已省略以避免误导。可运行 `kocode.knowledge.refresh` 刷新。")
+			lines.push(
+				"プロジェクト知識グラフは現在の git HEAD と一致していません。誤誘導を避けるため、要約は省略し、ディレクトリ骨格のみ提示します。必要なら `cline.knowledge.refresh` で更新できます。",
+			)
 		} else {
-			lines.push("未检索到与当前任务直接相关的图谱节点。以下提供项目目录骨架供参考。")
+			lines.push("現在のタスクに直接関連するグラフノードは見つかりませんでした。参考としてディレクトリ骨格のみ提示します。")
 		}
 
 		const dirs = graph ? this.directorySkeleton(graph.nodes) : []
@@ -140,10 +146,24 @@ export class KnowledgeContextProvider {
 			const segments = node.filePath.split("/")
 			// 取前两层目录,形成骨架。
 			if (segments.length >= 2) {
-				dirs.add(segments.slice(0, Math.min(2, segments.length - 1)).join("/") + "/")
+				dirs.add(`${segments.slice(0, Math.min(2, segments.length - 1)).join("/")}/`)
 			}
 		}
 		return [...dirs].sort().slice(0, SKELETON_MAX_ENTRIES)
+	}
+
+	private annotationLines(node: GraphNode): string[] {
+		const lines: string[] = []
+		const tags = node.tags.filter((tag) => tag.trim().length > 0).slice(0, MAX_TAGS_PER_NODE)
+		const metaParts = [`complexity=${node.complexity}`]
+		if (tags.length > 0) {
+			metaParts.push(`tags=${tags.join(", ")}`)
+		}
+		lines.push(`Metadata(reference): ${metaParts.join("; ")}`)
+		if (node.languageNotes) {
+			lines.push(`Language notes(reference): ${this.truncate(node.languageNotes, 120)}`)
+		}
+		return lines
 	}
 
 	private lineSuffix(node: GraphNode): string {

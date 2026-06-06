@@ -1,7 +1,7 @@
+import { convertClineMessageToProto } from "@shared/proto-conversions/cline-message"
 import { expect } from "chai"
 import { describe, it } from "mocha"
 import { sendPartialMessageEvent } from "@/core/controller/ui/subscribeToPartialMessage"
-import { convertClineMessageToProto } from "@shared/proto-conversions/cline-message"
 import { ClineWorkerAdapter } from "../ClineWorkerAdapter"
 import { WorkerEventBus } from "../WorkerEventBus"
 
@@ -23,7 +23,13 @@ describe("ClineWorkerAdapter", () => {
 		const bus = new WorkerEventBus()
 		const controller = {
 			task: undefined,
-			initTask: async (prompt: string, _images?: string[], _files?: string[], _historyItem?: unknown, taskSettings?: Record<string, unknown>) => {
+			initTask: async (
+				prompt: string,
+				_images?: string[],
+				_files?: string[],
+				_historyItem?: unknown,
+				taskSettings?: Record<string, unknown>,
+			) => {
 				expect(prompt).to.contain("Fix login")
 				expect(taskSettings?.actModeApiProvider).to.equal("cline")
 				expect(taskSettings?.actModeClineModelId).to.equal("deepseek-v4-pro")
@@ -32,6 +38,8 @@ describe("ClineWorkerAdapter", () => {
 				return "task-1"
 			},
 			cancelTask: async () => undefined,
+			getWorkspaceManager: () => undefined,
+			ensureWorkspaceManager: async () => undefined,
 		} as any
 		const worker = new ClineWorkerAdapter(controller, bus)
 
@@ -47,17 +55,21 @@ describe("ClineWorkerAdapter", () => {
 			task: {},
 			initTask: async () => "task-1",
 			cancelTask: async () => undefined,
+			getWorkspaceManager: () => undefined,
+			ensureWorkspaceManager: async () => undefined,
 		} as any
 		const worker = new ClineWorkerAdapter(controller, bus)
 		await worker.start(taskSpec)
 
-		await sendPartialMessageEvent(convertClineMessageToProto({
-			type: "say",
-			say: "completion_result",
-			text: "Done",
-			partial: false,
-			ts: 10,
-		} as any))
+		await sendPartialMessageEvent(
+			convertClineMessageToProto({
+				type: "say",
+				say: "completion_result",
+				text: "Done",
+				partial: false,
+				ts: 10,
+			} as any),
+		)
 		await new Promise((resolve) => setTimeout(resolve, 0))
 
 		expect(bus.getDigest().status).to.equal("completed")
@@ -78,6 +90,8 @@ describe("ClineWorkerAdapter", () => {
 			task: taskMock,
 			initTask: async () => "task-1",
 			cancelTask: async () => undefined,
+			getWorkspaceManager: () => undefined,
+			ensureWorkspaceManager: async () => undefined,
 		} as any
 		const worker = new ClineWorkerAdapter(controller, bus)
 		await worker.start(taskSpec)
@@ -107,6 +121,19 @@ describe("ClineWorkerAdapter", () => {
 		)
 		await new Promise((resolve) => setTimeout(resolve, 0))
 
+		expect(askResponses.length).to.equal(0)
+
+		await sendPartialMessageEvent(
+			convertClineMessageToProto({
+				type: "ask",
+				ask: "followup",
+				text: "Need anything else?",
+				partial: false,
+				ts: 21,
+			} as any),
+		)
+		await new Promise((resolve) => setTimeout(resolve, 0))
+
 		expect(askResponses.length).to.equal(1)
 		expect(askResponses[0].type).to.equal("messageResponse")
 		expect(askResponses[0].text ?? "").to.contain("Add dark mode toggle")
@@ -125,6 +152,8 @@ describe("ClineWorkerAdapter", () => {
 			task: taskMock,
 			initTask: async () => "task-1",
 			cancelTask: async () => undefined,
+			getWorkspaceManager: () => undefined,
+			ensureWorkspaceManager: async () => undefined,
 		} as any
 		const worker = new ClineWorkerAdapter(controller, bus)
 		await worker.start(taskSpec)
@@ -178,6 +207,8 @@ describe("ClineWorkerAdapter", () => {
 					)
 				}, 20)
 			},
+			getWorkspaceManager: () => undefined,
+			ensureWorkspaceManager: async () => undefined,
 		} as any
 		const worker = new ClineWorkerAdapter(controller, bus)
 		await worker.start(taskSpec)
@@ -200,4 +231,167 @@ describe("ClineWorkerAdapter", () => {
 		expect(askResponses[0].text ?? "").to.contain("vanilla CSS")
 		worker.dispose()
 	})
+
+	it("restores a bounded Cline checkpoint only after rollback is confirmed", async () => {
+		const bus = new WorkerEventBus()
+		let restoreCall: { messageTs: number; restoreType: string; offset?: number } | undefined
+		const taskMock = {
+			taskId: "task-rollback",
+			taskState: { isInitialized: true },
+			messageStateHandler: {
+				getClineMessages: () => [
+					{ type: "say", say: "checkpoint_created", ts: 10, lastCheckpointHash: "a" },
+					{ type: "say", say: "checkpoint_created", ts: 20, lastCheckpointHash: "b" },
+					{ type: "say", say: "checkpoint_created", ts: 30, lastCheckpointHash: "c" },
+				],
+			},
+			checkpointManager: {
+				restoreCheckpoint: async (messageTs: number, restoreType: string, offset?: number) => {
+					restoreCall = { messageTs, restoreType, offset }
+				},
+			},
+		}
+		const controller = {
+			task: taskMock,
+			initTask: async () => "task-rollback",
+			cancelTask: async () => undefined,
+			getWorkspaceManager: () => undefined,
+			ensureWorkspaceManager: async () => undefined,
+		} as any
+		const worker = new ClineWorkerAdapter(controller, bus)
+		await worker.start(taskSpec)
+
+		const requestResult = await worker.control({
+			action: "rollback_request",
+			reason: "完全不行，回滚",
+			rollback: { steps: 2, restoreType: "taskAndWorkspace" },
+		})
+		expect(requestResult.handled).to.equal(false)
+		expect(restoreCall).to.equal(undefined)
+
+		const confirmedResult = await worker.control({
+			action: "rollback_confirmed",
+			reason: "确认回滚",
+			rollback: { steps: 2, restoreType: "taskAndWorkspace" },
+		})
+
+		expect(confirmedResult.handled).to.equal(true)
+		expect(restoreCall).to.deep.equal({ messageTs: 20, restoreType: "taskAndWorkspace", offset: 0 })
+		expect(worker.isRunning()).to.equal(false)
+		worker.dispose()
+	})
+
+	it("auto-approves an approval ask via the Flash resolver (yesButtonClicked)", async () => {
+		const bus = new WorkerEventBus()
+		const askResponses: Array<{ type: string; text?: string }> = []
+		const resolverCalls: Array<{ askType: string; askText: string }> = []
+		const taskMock = {
+			taskId: "task-1",
+			handleWebviewAskResponse: async (type: string, text?: string) => {
+				askResponses.push({ type, text })
+			},
+		}
+		const controller = {
+			task: taskMock,
+			initTask: async () => "task-1",
+			cancelTask: async () => undefined,
+			getWorkspaceManager: () => undefined,
+			ensureWorkspaceManager: async () => undefined,
+		} as any
+		const worker = new ClineWorkerAdapter(controller, bus)
+		worker.setApprovalResolver(async (request) => {
+			resolverCalls.push(request)
+			return true
+		})
+		await worker.start(taskSpec)
+
+		await sendPartialMessageEvent(
+			convertClineMessageToProto({
+				type: "ask",
+				ask: "command",
+				text: "npm test",
+				partial: false,
+				ts: 50,
+			} as any),
+		)
+		await new Promise((resolve) => setTimeout(resolve, 0))
+
+		expect(resolverCalls.length).to.equal(1)
+		expect(resolverCalls[0]).to.deep.equal({ askType: "command", askText: "npm test" })
+		expect(askResponses.length).to.equal(1)
+		expect(askResponses[0].type).to.equal("yesButtonClicked")
+		worker.dispose()
+	})
+
+	it("auto-rejects an approval ask when the Flash resolver denies it (noButtonClicked)", async () => {
+		const bus = new WorkerEventBus()
+		const askResponses: Array<{ type: string; text?: string }> = []
+		const taskMock = {
+			taskId: "task-1",
+			handleWebviewAskResponse: async (type: string, text?: string) => {
+				askResponses.push({ type, text })
+			},
+		}
+		const controller = {
+			task: taskMock,
+			initTask: async () => "task-1",
+			cancelTask: async () => undefined,
+			getWorkspaceManager: () => undefined,
+			ensureWorkspaceManager: async () => undefined,
+		} as any
+		const worker = new ClineWorkerAdapter(controller, bus)
+		worker.setApprovalResolver(async () => false)
+		await worker.start(taskSpec)
+
+		await sendPartialMessageEvent(
+			convertClineMessageToProto({
+				type: "ask",
+				ask: "tool",
+				text: "delete everything",
+				partial: false,
+				ts: 60,
+			} as any),
+		)
+		await new Promise((resolve) => setTimeout(resolve, 0))
+
+		expect(askResponses.length).to.equal(1)
+		expect(askResponses[0].type).to.equal("noButtonClicked")
+		worker.dispose()
+	})
+
+	it("does not auto-respond to followup asks (left to injection/human flow)", async () => {
+		const bus = new WorkerEventBus()
+		const askResponses: Array<{ type: string; text?: string }> = []
+		const taskMock = {
+			taskId: "task-1",
+			handleWebviewAskResponse: async (type: string, text?: string) => {
+				askResponses.push({ type, text })
+			},
+		}
+		const controller = {
+			task: taskMock,
+			initTask: async () => "task-1",
+			cancelTask: async () => undefined,
+			getWorkspaceManager: () => undefined,
+			ensureWorkspaceManager: async () => undefined,
+		} as any
+		const worker = new ClineWorkerAdapter(controller, bus)
+		worker.setApprovalResolver(async () => true)
+		await worker.start(taskSpec)
+
+		await sendPartialMessageEvent(
+			convertClineMessageToProto({
+				type: "ask",
+				ask: "followup",
+				text: "Which color?",
+				partial: false,
+				ts: 70,
+			} as any),
+		)
+		await new Promise((resolve) => setTimeout(resolve, 0))
+
+		expect(askResponses.length).to.equal(0)
+		worker.dispose()
+	})
 })
+

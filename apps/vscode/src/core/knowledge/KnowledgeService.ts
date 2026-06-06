@@ -1,24 +1,24 @@
-import * as fs from "fs/promises"
-import * as path from "path"
 import { listFiles } from "@services/glob/list-files"
 import { getLatestGitCommitHash } from "@utils/git"
+import * as fs from "fs/promises"
+import * as path from "path"
 import { Logger } from "@/shared/services/Logger"
-import { FlashSemanticAnalyzer, FlashSemanticCancelledError } from "./backends/FlashSemanticAnalyzer"
+import { KocodeSemanticAnalyzer, KocodeSemanticCancelledError } from "./backends/KocodeSemanticAnalyzer"
 import { TreeSitterBackend } from "./backends/TreeSitterBackend"
-import { KnowledgeStore, type KnowledgeMeta, type KnowledgeTier } from "./KnowledgeStore"
+import { type KnowledgeMeta, KnowledgeStore, type KnowledgeTier } from "./KnowledgeStore"
 import { GraphBuilder } from "./vendor/analyzer/graph-builder"
 import { detectLayers } from "./vendor/analyzer/layer-detector"
-import { analyzeChanges, buildFingerprintStore } from "./vendor/fingerprint"
 import { classifyUpdate } from "./vendor/change-classifier"
-import { getChangedFiles, mergeGraphUpdate } from "./vendor/staleness"
+import { analyzeChanges, buildFingerprintStore } from "./vendor/fingerprint"
 import { createIgnoreFilter, type IgnoreFilter } from "./vendor/ignore-filter"
 import { LanguageRegistry } from "./vendor/languages/language-registry"
 import { PluginRegistry } from "./vendor/plugins/registry"
+import { getChangedFiles, mergeGraphUpdate } from "./vendor/staleness"
 import type { KnowledgeGraph } from "./vendor/types"
 
 /** 单次分析的层级配置(R1/R2/R3:分层可独立开关)。 */
 export interface AnalyzeOptions {
-	/** 是否生成 Tier 1 语义层(便宜模型)。默认 true。 */
+	/** 是否生成 Tier 1 语义层(Kocode 模型)。默认 true。 */
 	semantic?: boolean
 	/** 是否生成 Tier 2 深度层(tour/domain)。默认 false(R3:按需,默认不全量)。 */
 	deep?: boolean
@@ -65,8 +65,26 @@ export interface IncrementalResult {
 
 // 与 TreeSitterBackend 支持的扩展名保持一致(用于 scanner 判定"可结构提取")。
 const STRUCTURE_EXTENSIONS = new Set([
-	".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".py", ".rs", ".go",
-	".cpp", ".hpp", ".cc", ".c", ".h", ".cs", ".rb", ".java", ".php", ".swift", ".kt",
+	".js",
+	".jsx",
+	".mjs",
+	".cjs",
+	".ts",
+	".tsx",
+	".py",
+	".rs",
+	".go",
+	".cpp",
+	".hpp",
+	".cc",
+	".c",
+	".h",
+	".cs",
+	".rb",
+	".java",
+	".php",
+	".swift",
+	".kt",
 ])
 
 const MAX_FILE_BYTES = 512 * 1024 // 单文件超过 512KB 跳过语义分析(仍建结构节点)
@@ -75,9 +93,9 @@ const SEMANTIC_CONCURRENCY = 5 // 与上游一致:最多 5 并发文件分析
 /**
  * 项目知识图谱核心编排服务(R1-R4, R8)。
  *
- * 全量分析流程:scan → Tier0 结构(tree-sitter)→ Tier1 语义(便宜模型)→ GraphBuilder → 落盘。
+ * 全量分析流程:scan → Tier0 结构(tree-sitter)→ Tier1 语义(Kocode 模型)→ GraphBuilder → 落盘。
  * 复用 vendor 的纯算法(GraphBuilder/registry/fingerprint/ignore-filter),
- * Tier0/Tier1 通过 Kocode 后端适配器(TreeSitterBackend / FlashSemanticAnalyzer)接入。
+ * Tier0/Tier1 通过 Kocode 后端适配器(TreeSitterBackend / KocodeSemanticAnalyzer)接入。
  */
 export class KnowledgeService {
 	private readonly store: KnowledgeStore
@@ -107,7 +125,7 @@ export class KnowledgeService {
 	/** 全量分析(对应 kocode.knowledge.analyze)。 */
 	async analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResult> {
 		const { semantic = true, deep = false, signal, onProgress } = options
-		const semanticAnalyzer = new FlashSemanticAnalyzer()
+		const semanticAnalyzer = new KocodeSemanticAnalyzer()
 		let cancelled = false
 
 		const emit = (progress: AnalyzeProgress) => onProgress?.(progress)
@@ -146,11 +164,10 @@ export class KnowledgeService {
 			}
 		}
 
-		// ---- 3. Tier 1 语义层(便宜模型,可并发、可取消)----
+		// ---- 3. Tier 1 语义层(Kocode 模型,可并发、可取消)----
 		const totalSemantic = structuralByFile.size
-		let processed = 0
 		if (semantic) {
-			emit({ phase: "semantic", current: 0, total: totalSemantic, message: "生成语义摘要(便宜模型)" })
+			emit({ phase: "semantic", current: 0, total: totalSemantic, message: "生成语义摘要(Kocode 模型)" })
 			try {
 				await this.runSemanticBatch(
 					[...structuralByFile.entries()],
@@ -158,13 +175,12 @@ export class KnowledgeService {
 					projectContext,
 					signal,
 					(n) => {
-						processed = n
-						emit({ phase: "semantic", current: n, total: totalSemantic, message: "生成语义摘要(便宜模型)" })
+						emit({ phase: "semantic", current: n, total: totalSemantic, message: "生成语义摘要(Kocode 模型)" })
 					},
 					builder,
 				)
 			} catch (error) {
-				if (error instanceof FlashSemanticCancelledError) {
+				if (error instanceof KocodeSemanticCancelledError) {
 					cancelled = true
 					Logger.log("[KnowledgeService] 语义分析被取消,保留已生成部分")
 				} else {
@@ -296,7 +312,7 @@ export class KnowledgeService {
 
 		// PARTIAL_UPDATE / ARCHITECTURE_UPDATE:重算受影响文件并合并。
 		emit({ phase: "structure", message: `增量更新 ${decision.filesToReanalyze.length} 个文件` })
-		const semanticAnalyzer = new FlashSemanticAnalyzer()
+		const semanticAnalyzer = new KocodeSemanticAnalyzer()
 		const builder = new GraphBuilder(path.basename(this.workspaceRoot), head, this.languageRegistry)
 		const projectContext = `项目名: ${path.basename(this.workspaceRoot)}`
 		let cancelled = false
@@ -312,7 +328,7 @@ export class KnowledgeService {
 					continue // 文件可能已删除,由 mergeGraphUpdate 通过 changedFilePaths 移除其旧节点
 				}
 				const structural = this.treeSitter.analyzeFile(abs, content)
-				let sem: Awaited<ReturnType<FlashSemanticAnalyzer["analyzeFile"]>> = null
+				let sem: Awaited<ReturnType<KocodeSemanticAnalyzer["analyzeFile"]>> = null
 				if (semantic && content.length <= MAX_FILE_BYTES) {
 					sem = await semanticAnalyzer.analyzeFile(rel, content, { projectContext, signal })
 				}
@@ -325,7 +341,7 @@ export class KnowledgeService {
 				})
 			}
 		} catch (error) {
-			if (error instanceof FlashSemanticCancelledError) {
+			if (error instanceof KocodeSemanticCancelledError) {
 				cancelled = true
 			} else {
 				throw error
@@ -387,7 +403,7 @@ export class KnowledgeService {
 
 	private throwIfAborted(signal?: AbortSignal): void {
 		if (signal?.aborted) {
-			throw new FlashSemanticCancelledError()
+			throw new KocodeSemanticCancelledError()
 		}
 	}
 
@@ -415,7 +431,7 @@ export class KnowledgeService {
 	/** 并发执行语义分析,带取消与进度(R8.1/R8.2)。 */
 	private async runSemanticBatch(
 		entries: Array<[string, { analysis: ReturnType<TreeSitterBackend["analyzeFile"]>; content: string }]>,
-		analyzer: FlashSemanticAnalyzer,
+		analyzer: KocodeSemanticAnalyzer,
 		projectContext: string,
 		signal: AbortSignal | undefined,
 		onProcessed: (count: number) => void,
@@ -430,7 +446,7 @@ export class KnowledgeService {
 				this.throwIfAborted(signal)
 				const [relPath, { analysis, content }] = entries[current]
 
-				let semantic: Awaited<ReturnType<FlashSemanticAnalyzer["analyzeFile"]>> = null
+				let semantic: Awaited<ReturnType<KocodeSemanticAnalyzer["analyzeFile"]>> = null
 				if (content.length <= MAX_FILE_BYTES) {
 					semantic = await analyzer.analyzeFile(relPath, content, { projectContext, signal })
 				}

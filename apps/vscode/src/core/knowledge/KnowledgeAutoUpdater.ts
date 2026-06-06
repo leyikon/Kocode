@@ -1,6 +1,9 @@
+import { execFile } from "child_process"
 import chokidar, { type FSWatcher } from "chokidar"
 import * as fs from "fs/promises"
 import * as path from "path"
+import { promisify } from "util"
+import * as vscode from "vscode"
 import { Logger } from "@/shared/services/Logger"
 import { KnowledgeService } from "./KnowledgeService"
 import { KnowledgeStore } from "./KnowledgeStore"
@@ -19,9 +22,12 @@ import { KnowledgeStore } from "./KnowledgeStore"
  */
 
 const DEBOUNCE_MS = 3_000
+const execFileAsync = promisify(execFile)
+const VSCODE_AUTO_UPDATE_SETTING = "kocode.knowledge.autoUpdate"
 
 export class KnowledgeAutoUpdater {
 	private watcher?: FSWatcher
+	private configWatcher?: vscode.Disposable
 	private debounceTimer?: ReturnType<typeof setTimeout>
 	private running = false
 	private disposed = false
@@ -34,6 +40,9 @@ export class KnowledgeAutoUpdater {
 	/** 读取 autoUpdate 配置(缺省/出错视为关闭)。 */
 	private async isAutoUpdateEnabled(): Promise<boolean> {
 		try {
+			if (vscode.workspace.getConfiguration("kocode.knowledge").get<boolean>("autoUpdate") === true) {
+				return true
+			}
 			const config = await this.store.readConfig()
 			return config.autoUpdate === true
 		} catch {
@@ -41,26 +50,74 @@ export class KnowledgeAutoUpdater {
 		}
 	}
 
-	/** 启动监听。若 autoUpdate 关闭或非 git 仓库,则不挂载监听器。 */
+	/** 启动配置监听,并按当前 autoUpdate 状态挂载/卸载 HEAD watcher。 */
 	async start(): Promise<void> {
-		if (this.disposed || this.watcher) {
+		if (this.disposed) {
+			return
+		}
+		if (!this.configWatcher) {
+			this.configWatcher = vscode.workspace.onDidChangeConfiguration((event) => {
+				if (event.affectsConfiguration(VSCODE_AUTO_UPDATE_SETTING)) {
+					void this.syncWatcher()
+				}
+			})
+		}
+		await this.syncWatcher()
+	}
+
+	private async syncWatcher(): Promise<void> {
+		if (this.disposed) {
 			return
 		}
 		if (!(await this.isAutoUpdateEnabled())) {
+			await this.stopWatcher()
 			Logger.log("[KnowledgeAutoUpdater] autoUpdate 未开启,跳过自动更新监听")
 			return
 		}
-		const gitLogsHead = path.join(this.workspaceRoot, ".git", "logs", "HEAD")
+		if (this.watcher) {
+			return
+		}
+
+		const gitLogsHead = await this.resolveGitHeadLogPath()
+		if (!gitLogsHead) {
+			Logger.log("[KnowledgeAutoUpdater] 非 git 仓库或无 HEAD log,跳过自动更新监听")
+			return
+		}
 		try {
 			await fs.access(gitLogsHead)
 		} catch {
-			Logger.log("[KnowledgeAutoUpdater] 非 git 仓库或无 .git/logs/HEAD,跳过自动更新监听")
+			Logger.log("[KnowledgeAutoUpdater] 非 git 仓库或无 HEAD log,跳过自动更新监听")
 			return
 		}
 
 		this.watcher = chokidar.watch(gitLogsHead, { persistent: true, ignoreInitial: true })
 		this.watcher.on("change", () => this.scheduleUpdate())
 		Logger.log("[KnowledgeAutoUpdater] 已启动 commit 后自动增量更新监听")
+	}
+
+	private async resolveGitHeadLogPath(): Promise<string | null> {
+		try {
+			const { stdout } = await execFileAsync("git", ["rev-parse", "--git-path", "logs/HEAD"], {
+				cwd: this.workspaceRoot,
+			})
+			const gitPath = stdout.trim()
+			if (!gitPath) {
+				return null
+			}
+			return path.isAbsolute(gitPath) ? gitPath : path.join(this.workspaceRoot, gitPath)
+		} catch (error) {
+			Logger.log(`[KnowledgeAutoUpdater] 解析 git HEAD log 失败: ${String(error)}`)
+			return null
+		}
+	}
+
+	private async stopWatcher(): Promise<void> {
+		if (this.debounceTimer) {
+			clearTimeout(this.debounceTimer)
+			this.debounceTimer = undefined
+		}
+		await this.watcher?.close()
+		this.watcher = undefined
 	}
 
 	private scheduleUpdate(): void {
@@ -99,11 +156,8 @@ export class KnowledgeAutoUpdater {
 
 	dispose(): void {
 		this.disposed = true
-		if (this.debounceTimer) {
-			clearTimeout(this.debounceTimer)
-			this.debounceTimer = undefined
-		}
-		void this.watcher?.close()
-		this.watcher = undefined
+		this.configWatcher?.dispose()
+		this.configWatcher = undefined
+		void this.stopWatcher()
 	}
 }

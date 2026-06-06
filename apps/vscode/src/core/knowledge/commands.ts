@@ -1,9 +1,10 @@
-import * as vscode from "vscode"
 import { getWorkspacePath } from "@utils/path"
-import { Logger } from "@/shared/services/Logger"
+import * as vscode from "vscode"
 import type { Controller } from "@/core/controller"
 import { ExtensionRegistryInfo } from "@/registry"
+import { Logger } from "@/shared/services/Logger"
 import { type AnalyzeProgress, KnowledgeService } from "./KnowledgeService"
+import { KnowledgeStore } from "./KnowledgeStore"
 
 /**
  * 项目知识图谱命令注册(R9)。
@@ -51,7 +52,7 @@ function reportProgress(
 }
 
 function formatTokenSummary(usage: { totalTokens: number; requests: number }): string {
-	return `便宜模型调用 ${usage.requests} 次,约 ${usage.totalTokens} tokens`
+	return `Kocode 模型调用 ${usage.requests} 次,约 ${usage.totalTokens} tokens`
 }
 
 async function runAnalyze(controller: Controller): Promise<void> {
@@ -129,6 +130,24 @@ async function runRefresh(controller: Controller): Promise<void> {
 	)
 }
 
+async function runToggleAutoUpdate(controller: Controller): Promise<void> {
+	const root = await getWorkspaceRoot(controller)
+	if (!root) {
+		void vscode.window.showWarningMessage("未打开工作区,无法切换项目知识图谱自动更新。")
+		return
+	}
+
+	const setting = vscode.workspace.getConfiguration("kocode.knowledge").get<boolean>("autoUpdate") === true
+	const store = new KnowledgeStore(root)
+	const config = await store.readConfig()
+	const next = !(setting || config.autoUpdate === true)
+
+	await vscode.workspace.getConfiguration("kocode.knowledge").update("autoUpdate", next, vscode.ConfigurationTarget.Workspace)
+	await store.writeConfig({ ...config, autoUpdate: next })
+
+	void vscode.window.showInformationMessage(next ? "项目知识图谱自动更新已开启。" : "项目知识图谱自动更新已关闭。")
+}
+
 /**
  * 注册全部知识图谱命令。返回 Disposable 数组供 extension 订阅。
  */
@@ -136,6 +155,7 @@ export function registerKnowledgeCommands(controller: Controller): vscode.Dispos
 	return [
 		vscode.commands.registerCommand(commands.KnowledgeAnalyze, () => runAnalyze(controller)),
 		vscode.commands.registerCommand(commands.KnowledgeRefresh, () => runRefresh(controller)),
+		vscode.commands.registerCommand(commands.KnowledgeToggleAutoUpdate, () => runToggleAutoUpdate(controller)),
 		vscode.commands.registerCommand(commands.KnowledgeOpenProjectMap, () => {
 			// R9.3:本期占位/禁用,可视化在 Out of Scope。
 			void vscode.window.showInformationMessage("Project Map 可视化将在后续版本提供。当前可使用「生成项目知识图谱」命令构建图谱数据。")

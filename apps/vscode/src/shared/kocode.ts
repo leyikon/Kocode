@@ -1,7 +1,7 @@
 export type KocodeContextLayer = "social" | "task" | "revision" | "worker_memory" | "worker_digest"
 
 export type KocodeTaskMode = "coding" | "debugging" | "learning" | "slide_preview" | "quiz"
-export type KocodeTaskStatus = "draft" | "active" | "paused" | "completed" | "cancelled"
+export type KocodeTaskStatus = "draft" | "active" | "paused" | "completed" | "cancelled" | "failed"
 
 export type TaskSpecPatchKind =
 	| "replace_goal"
@@ -12,6 +12,7 @@ export type TaskSpecPatchKind =
 	| "request_pause"
 	| "request_cancel"
 	| "request_replan"
+	| "request_rollback"
 
 export interface TaskSpecPatch {
 	kind: TaskSpecPatchKind
@@ -33,12 +34,37 @@ export interface TaskSpec {
 	acceptanceCriteria: string[]
 }
 
-export type WorkerControlAction = "pause" | "cancel" | "redirect" | "append_context" | "replan"
+export type WorkerRollbackRestoreType = "workspace" | "taskAndWorkspace"
+
+export interface WorkerRollbackRequest {
+	steps?: number
+	restoreType?: WorkerRollbackRestoreType
+	confirmationId?: string
+}
+
+export interface PendingRollbackConfirmation {
+	id: string
+	steps: number
+	restoreType: WorkerRollbackRestoreType
+	reason: string
+	sourceMessageId: string
+	createdAt: number
+}
+
+export type WorkerControlAction =
+	| "pause"
+	| "cancel"
+	| "redirect"
+	| "append_context"
+	| "replan"
+	| "rollback_request"
+	| "rollback_confirmed"
 
 export interface WorkerControlRequest {
 	action: WorkerControlAction
 	reason: string
 	taskSpecPatch?: TaskSpecPatch
+	rollback?: WorkerRollbackRequest
 }
 
 export type KocodeMessageAuthor = "user" | "flash"
@@ -114,4 +140,5 @@ export interface KocodeSessionState {
 	taskSpec?: TaskSpec
 	workerDigest: WorkerDigest
 	workerEvents: WorkerEvent[]
+	pendingRollback?: PendingRollbackConfirmation
 }

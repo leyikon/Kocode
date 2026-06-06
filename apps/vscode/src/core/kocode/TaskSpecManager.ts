@@ -71,7 +71,7 @@ export class TaskSpecManager {
 	ensureTaskSpecFromDraft(draft: TaskSpecDraft, sourceMessageId: string): TaskSpec {
 		const goal = draft.goal.trim()
 		const files = draft.files ?? []
-		if (!this.taskSpec || this.taskSpec.status === "completed" || this.taskSpec.status === "cancelled") {
+		if (!this.taskSpec || this.taskSpec.status === "completed" || this.taskSpec.status === "cancelled" || this.taskSpec.status === "failed") {
 			this.taskSpec = {
 				id: `${Date.now()}`,
 				goal,
@@ -160,6 +160,9 @@ export class TaskSpecManager {
 			case "request_replan":
 				this.addPatchUnique(this.taskSpec.pendingPatches, patch)
 				break
+			case "request_rollback":
+				this.addUnique(this.taskSpec.rejectedDirections, patch.text)
+				break
 		}
 
 		if (patch.kind !== "request_replan") {
@@ -197,9 +200,19 @@ export class TaskSpecManager {
 		return this.taskSpec
 	}
 
+	markFailed(): TaskSpec | undefined {
+		if (this.taskSpec) {
+			this.taskSpec.status = "failed"
+		}
+		return this.taskSpec
+	}
+
 	isTaskLike(text: string): boolean {
 		const normalized = text.trim()
-		return TASK_KEYWORDS.some((keyword) => normalized.includes(keyword)) || LEARNING_KEYWORDS.some((keyword) => normalized.includes(keyword))
+		return (
+			TASK_KEYWORDS.some((keyword) => normalized.includes(keyword)) ||
+			LEARNING_KEYWORDS.some((keyword) => normalized.includes(keyword))
+		)
 	}
 
 	inferMode(text: string): KocodeTaskMode {
