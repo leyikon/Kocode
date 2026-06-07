@@ -1,13 +1,13 @@
-import type { KocodeChatMessage, KocodeEvent } from "@shared/kocode"
+import type { KocodeCharacterId, KocodeChatMessage, KocodeEvent } from "@shared/kocode"
 import { BooleanRequest, EmptyRequest } from "@shared/proto/cline/common"
-import { BookOpenIcon, MenuIcon, PlusIcon, SendIcon, SettingsIcon } from "lucide-react"
+import { BookOpenIcon, CheckIcon, ChevronLeftIcon, MenuIcon, PlusIcon, SearchIcon, SendIcon, SettingsIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useMount } from "react-use"
 import { Virtuoso } from "react-virtuoso"
+import himeAvatar from "@/assets/kocode/hime-avatar.png"
 import kokoAvatar from "@/assets/kocode/koko-avatar.png"
-import kokoBanner from "@/assets/kocode/koko-banner.png"
+import manaAvatar from "@/assets/kocode/mana-avatar.png"
 import {
-	ActionButtons,
 	CHAT_CONSTANTS,
 	ChatLayout,
 	InputSection,
@@ -24,10 +24,60 @@ import "./KocodeChatView.css"
 
 interface KocodeChatViewProps {
 	isHidden: boolean
-	onOpenLegacy: () => void
 }
 
 const MAX_ATTACHMENTS = CHAT_CONSTANTS.MAX_IMAGES_AND_FILES_PER_MESSAGE
+
+type KocodeCharacter = {
+	id: KocodeCharacterId
+	name: string
+	label: string
+	status: string
+	tag: string
+	avatar: string
+	themeClass: string
+	welcome: string
+	placeholder: string
+}
+
+const KOCODE_CHARACTERS: KocodeCharacter[] = [
+	{
+		id: "koko",
+		name: "ここちゃん",
+		label: "デフォルト",
+		status: "やさしく一緒に進めるにゃ",
+		tag: "オンライン",
+		avatar: kokoAvatar,
+		themeClass: "theme-koko",
+		welcome: "ボス、今日は何を作るにゃ？",
+		placeholder: "ここちゃんにメッセージを送る...",
+	},
+	{
+		id: "hime",
+		name: "ひめ様",
+		label: "プリンセス",
+		status: "べ、別に助けたいわけじゃないわよ",
+		tag: "オンライン",
+		avatar: himeAvatar,
+		themeClass: "theme-hime",
+		welcome: "まったく、仕方ないわね。何を作るの？",
+		placeholder: "ひめ様にメッセージを送る...",
+	},
+	{
+		id: "mana",
+		name: "まな先輩",
+		label: "先輩",
+		status: "落ち着いて整理しましょう",
+		tag: "オンライン",
+		avatar: manaAvatar,
+		themeClass: "theme-mana",
+		welcome: "大丈夫です。一緒に順番に整理しましょう。",
+		placeholder: "まな先輩にメッセージを送る...",
+	},
+]
+
+const getKocodeCharacter = (characterId?: KocodeCharacterId) =>
+	KOCODE_CHARACTERS.find((character) => character.id === characterId) ?? KOCODE_CHARACTERS[0]
 
 const formatTime = (timestamp: number) =>
 	new Date(timestamp).toLocaleTimeString("ja-JP", {
@@ -36,52 +86,70 @@ const formatTime = (timestamp: number) =>
 	})
 
 const KocodeHeader = ({
-	onOpenLegacy,
+	character,
+	isContactsView,
+	onBackToChat,
+	onOpenContacts,
 	onOpenSettings,
 	onOpenWorkbench,
 }: {
-	onOpenLegacy: () => void
+	character: KocodeCharacter
+	isContactsView: boolean
+	onBackToChat: () => void
+	onOpenContacts: () => void
 	onOpenSettings: () => void
 	onOpenWorkbench: () => void
 }) => (
 	<header className="kocode-topbar">
-		<button aria-label="以前の画面を開く" className="kocode-icon-button" onClick={onOpenLegacy} type="button">
-			<MenuIcon size={21} />
+		<button
+			aria-label={isContactsView ? "チャットに戻る" : "連絡先を開く"}
+			className="kocode-icon-button"
+			onClick={isContactsView ? onBackToChat : onOpenContacts}
+			type="button">
+			{isContactsView ? <ChevronLeftIcon size={19} /> : <MenuIcon size={19} />}
 		</button>
 		<div className="kocode-logo">
 			<span aria-hidden>♡</span>
-			<strong>Kocode / ココーデ</strong>
+			<div>
+				<strong>{isContactsView ? "連絡先" : "Kocode / ココーデ"}</strong>
+				{!isContactsView && <small>{character.name}・{character.tag}</small>}
+			</div>
 		</div>
 		<button aria-label="作業メモを開く" className="kocode-icon-button" onClick={onOpenWorkbench} type="button">
-			<BookOpenIcon size={20} />
+			<BookOpenIcon size={18} />
 		</button>
 		<button aria-label="設定" className="kocode-icon-button" onClick={onOpenSettings} type="button">
-			<SettingsIcon size={20} />
+			<SettingsIcon size={18} />
 		</button>
 	</header>
 )
 
-const KocodeHero = () => (
-	<section className="kocode-hero">
-		<img alt="ここちゃん" className="kocode-hero-art" src={kokoBanner} />
-		<div className="kocode-hero-copy">
-			<h1>
-				ここちゃん<span>♡</span>
-			</h1>
-			<p>
-				なんでも気軽に
-				<br />
-				聞いてにゃ！
-			</p>
+const KocodeStatusCard = ({ character }: { character: KocodeCharacter }) => (
+	<section className="kocode-status-card">
+		<img alt="" aria-hidden className="kocode-status-avatar" draggable={false} src={character.avatar} />
+		<div className="kocode-status-copy">
+			<strong>{character.name}</strong>
+			<span>{character.status}</span>
 		</div>
+		<i aria-hidden />
 	</section>
 )
 
-const Avatar = () => <img alt="" aria-hidden className="kocode-avatar" draggable={false} src={kokoAvatar} />
+const Avatar = ({ character }: { character: KocodeCharacter }) => (
+	<img alt="" aria-hidden className="kocode-avatar" draggable={false} src={character.avatar} />
+)
 
-const AssistantBubble = ({ children, timestamp }: { children: React.ReactNode; timestamp?: number }) => (
+const AssistantBubble = ({
+	children,
+	timestamp,
+	character,
+}: {
+	children: React.ReactNode
+	timestamp?: number
+	character: KocodeCharacter
+}) => (
 	<div className="kocode-row kocode-row-assistant">
-		<Avatar />
+		<Avatar character={character} />
 		<div className="kocode-bubble-wrap">
 			<div className="kocode-bubble kocode-assistant-bubble">{children}</div>
 			{timestamp !== undefined && <time>{formatTime(timestamp)}</time>}
@@ -103,39 +171,112 @@ const UserBubble = ({ children, timestamp }: { children: React.ReactNode; timest
 	</div>
 )
 
-const KocodeEmptyChat = () => (
-	<div className="kocode-empty-chat">
-		<div className="kocode-day-divider">今日</div>
-		<AssistantBubble>
-			ボス、まずは小さく
-			<br />
-			作ってみるにゃ。
-		</AssistantBubble>
-		<UserBubble>うまく動かないよ〜</UserBubble>
-		<AssistantBubble>
-			このエラー、こわくないにゃ。
-			<br />
-			原因を一緒に見つけるにゃ〜
-		</AssistantBubble>
+const KocodeTypingBubble = ({ character, timestamp }: { character: KocodeCharacter; timestamp: number }) => (
+	<div className="kocode-row kocode-row-assistant kocode-typing-row" aria-label={`${character.name}が入力中`}>
+		<Avatar character={character} />
+		<div className="kocode-bubble-wrap">
+			<div className="kocode-bubble kocode-assistant-bubble kocode-typing-bubble">
+				<span />
+				<span />
+				<span />
+			</div>
+			<time>{formatTime(timestamp)}</time>
+		</div>
 	</div>
 )
 
-const KocodeChatMessageItem = ({ message }: { message: KocodeChatMessage }) => {
+const KocodeEmptyChat = ({
+	character,
+	showWaitingBubble,
+	waitingCharacter,
+	waitingSince,
+}: {
+	character: KocodeCharacter
+	showWaitingBubble: boolean
+	waitingCharacter: KocodeCharacter
+	waitingSince: number
+}) => (
+	<div className="kocode-empty-chat">
+		<div className="kocode-day-divider">今日</div>
+		<AssistantBubble character={character}>{character.welcome}</AssistantBubble>
+		{showWaitingBubble && <KocodeTypingBubble character={waitingCharacter} timestamp={waitingSince} />}
+	</div>
+)
+
+const KocodeChatMessageItem = ({ fallbackCharacter, message }: { fallbackCharacter: KocodeCharacter; message: KocodeChatMessage }) => {
 	if (message.author === "user") {
 		return <UserBubble timestamp={message.ts}>{message.text}</UserBubble>
 	}
 
+	const messageCharacter = message.characterId ? getKocodeCharacter(message.characterId) : fallbackCharacter
+
 	return (
-		<AssistantBubble timestamp={message.ts}>
+		<AssistantBubble character={messageCharacter} timestamp={message.ts}>
 			<MarkdownRow markdown={message.text} />
 		</AssistantBubble>
 	)
 }
 
-const KocodeChatView = ({ isHidden, onOpenLegacy }: KocodeChatViewProps) => {
+const KocodeContactsView = ({
+	characters,
+	selectedCharacter,
+	onSelectCharacter,
+}: {
+	characters: KocodeCharacter[]
+	selectedCharacter: KocodeCharacter
+	onSelectCharacter: (character: KocodeCharacter) => void
+}) => (
+	<section className="kocode-contacts">
+		<div className="kocode-contact-search">
+			<SearchIcon size={15} />
+			<span>キャラクターを探す</span>
+		</div>
+		<div className="kocode-contact-section-title">Kocode Friends</div>
+		<div className="kocode-contact-list">
+			{characters.map((character) => {
+				const selected = character.id === selectedCharacter.id
+				return (
+					<button
+						className={`kocode-contact-card ${character.themeClass}${selected ? " is-selected" : ""}`}
+						key={character.id}
+						onClick={() => onSelectCharacter(character)}
+						type="button">
+						<img alt="" aria-hidden className="kocode-contact-avatar" draggable={false} src={character.avatar} />
+						<div className="kocode-contact-main">
+							<div className="kocode-contact-name-row">
+								<strong>{character.name}</strong>
+								<span>{character.label}</span>
+							</div>
+							<p>{character.status}</p>
+						</div>
+						{selected && (
+							<div className="kocode-contact-check">
+								<CheckIcon size={14} />
+							</div>
+						)}
+					</button>
+				)
+			})}
+		</div>
+		<div className="kocode-contact-note">左上のボタンで、いつでもチャットに戻れるにゃ。</div>
+	</section>
+)
+
+const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 	const { apiConfiguration, clineMessages: messages, mode, navigateToSettings } = useExtensionState()
 	const [kocodeMessages, setKocodeMessages] = useState<KocodeChatMessage[]>([])
-	const task = useMemo(() => messages.at(0), [messages])
+	const [selectedCharacterId, setSelectedCharacterId] = useState<KocodeCharacterId>("koko")
+	const [screen, setScreen] = useState<"chat" | "contacts">("chat")
+	const [isAwaitingKocode, setIsAwaitingKocode] = useState(false)
+	const [isWorkerWaiting, setIsWorkerWaiting] = useState(false)
+	const [waitingCharacterId, setWaitingCharacterId] = useState<KocodeCharacterId>("koko")
+	const [waitingSince, setWaitingSince] = useState(Date.now())
+	const selectedCharacter = useMemo(
+		() => KOCODE_CHARACTERS.find((character) => character.id === selectedCharacterId) ?? KOCODE_CHARACTERS[0],
+		[selectedCharacterId],
+	)
+	const waitingCharacter = useMemo(() => getKocodeCharacter(waitingCharacterId), [waitingCharacterId])
+	const showWaitingBubble = screen === "chat" && (isAwaitingKocode || isWorkerWaiting)
 
 	const chatState = useChatState(messages)
 	const setChatInputValue = chatState.setInputValue
@@ -162,11 +303,22 @@ const KocodeChatView = ({ isHidden, onOpenLegacy }: KocodeChatViewProps) => {
 				return
 			}
 
-			await KocodeServiceClient.sendUserMessage({
-				text: messageToSend,
-				images,
-				files,
-			})
+			setIsAwaitingKocode(true)
+			setWaitingCharacterId(selectedCharacter.id)
+			setWaitingSince(Date.now())
+
+			try {
+				await KocodeServiceClient.sendUserMessage({
+					text: messageToSend,
+					characterId: selectedCharacter.id,
+					images,
+					files,
+				})
+			} catch (error) {
+				setIsAwaitingKocode(false)
+				console.error(error)
+				return
+			}
 
 			chatState.setInputValue("")
 			chatState.setActiveQuote(null)
@@ -175,7 +327,7 @@ const KocodeChatView = ({ isHidden, onOpenLegacy }: KocodeChatViewProps) => {
 			chatState.setSendingDisabled(false)
 			chatState.setEnableButtons(true)
 		},
-		[chatState],
+		[chatState, selectedCharacter.id],
 	)
 
 	const kocodeMessageHandlers = useMemo(
@@ -190,6 +342,14 @@ const KocodeChatView = ({ isHidden, onOpenLegacy }: KocodeChatViewProps) => {
 		KocodeServiceClient.getKocodeSession(EmptyRequest.create({}))
 			.then((session) => {
 				setKocodeMessages(session.messages)
+				const shouldWait =
+					session.workerDigest.status === "starting" ||
+					session.workerDigest.status === "running" ||
+					session.workerDigest.status === "waiting"
+				setIsWorkerWaiting(shouldWait)
+				if (shouldWait) {
+					setWaitingSince(Date.now())
+				}
 			})
 			.catch(console.error)
 
@@ -201,6 +361,23 @@ const KocodeChatView = ({ isHidden, onOpenLegacy }: KocodeChatViewProps) => {
 							return previous
 						}
 						return [...previous, event.message]
+					})
+					if (event.type === "flash_message") {
+						setIsAwaitingKocode(false)
+						setWaitingCharacterId(event.message.characterId ?? selectedCharacterId)
+					}
+				}
+				if (event.type === "worker_status") {
+					const shouldWait =
+						event.digest.status === "starting" || event.digest.status === "running" || event.digest.status === "waiting"
+					setIsWorkerWaiting((wasWaiting) => {
+						if (shouldWait && !wasWaiting) {
+							setWaitingSince(Date.now())
+						}
+						if (!shouldWait && wasWaiting) {
+							setWaitingSince(Date.now())
+						}
+						return shouldWait
 					})
 				}
 			},
@@ -249,70 +426,89 @@ const KocodeChatView = ({ isHidden, onOpenLegacy }: KocodeChatViewProps) => {
 
 	return (
 		<ChatLayout isHidden={isHidden}>
-			<main className="kocode-view">
+			<main className={`kocode-view ${selectedCharacter.themeClass}`}>
 				<KocodeHeader
-					onOpenLegacy={onOpenLegacy}
+					character={selectedCharacter}
+					isContactsView={screen === "contacts"}
+					onBackToChat={() => setScreen("chat")}
+					onOpenContacts={() => setScreen("contacts")}
 					onOpenSettings={() => navigateToSettings()}
 					onOpenWorkbench={() => void KocodeServiceClient.openWorkbench(EmptyRequest.create({}))}
 				/>
-				<KocodeHero />
-				<section className="kocode-conversation">
-					{kocodeMessages.length > 0 ? (
-						<Virtuoso
-							atBottomStateChange={scrollBehavior.setIsAtBottom}
-							className="kocode-thread scrollable"
-							data={kocodeMessages}
-							initialTopMostItemIndex={kocodeMessages.length - 1}
-							itemContent={(_, item) => <KocodeChatMessageItem message={item} />}
-							key="kocode-thread"
-							ref={scrollBehavior.virtuosoRef}
-						/>
-					) : (
-						<KocodeEmptyChat />
-					)}
-				</section>
+				{screen === "contacts" ? (
+					<KocodeContactsView
+						characters={KOCODE_CHARACTERS}
+						onSelectCharacter={(character) => {
+							setSelectedCharacterId(character.id)
+							setScreen("chat")
+						}}
+						selectedCharacter={selectedCharacter}
+					/>
+				) : (
+					<>
+						<KocodeStatusCard character={selectedCharacter} />
+						<section className="kocode-conversation">
+							{kocodeMessages.length > 0 ? (
+								<Virtuoso
+									atBottomStateChange={scrollBehavior.setIsAtBottom}
+									className="kocode-thread scrollable"
+									components={{
+										Footer: () =>
+											showWaitingBubble ? <KocodeTypingBubble character={waitingCharacter} timestamp={waitingSince} /> : null,
+									}}
+									data={kocodeMessages}
+									initialTopMostItemIndex={kocodeMessages.length - 1}
+									itemContent={(_, item) => <KocodeChatMessageItem fallbackCharacter={selectedCharacter} message={item} />}
+									key="kocode-thread"
+									ref={scrollBehavior.virtuosoRef}
+								/>
+							) : (
+								<KocodeEmptyChat
+									character={selectedCharacter}
+									showWaitingBubble={showWaitingBubble}
+									waitingCharacter={waitingCharacter}
+									waitingSince={waitingSince}
+								/>
+							)}
+						</section>
+					</>
+				)}
 			</main>
-			<footer className="kocode-input-dock">
-				<ActionButtons
-					chatState={chatState}
-					messageHandlers={messageHandlers}
-					messages={messages}
-					mode={mode}
-					scrollBehavior={scrollBehavior}
-					task={task}
-				/>
-				<div className="kocode-compose-row">
-					<button
-						aria-label="ファイルや画像を追加"
-						className="kocode-compose-action"
-						disabled={attachmentsDisabled}
-						onClick={() => void selectFilesAndImages()}
-						type="button">
-						<PlusIcon size={22} />
-					</button>
-					<div className="kocode-composer">
-						<InputSection
-							chatState={chatState}
-							messageHandlers={kocodeMessageHandlers}
-							placeholderText="ここちゃんにメッセージを送る..."
-							scrollBehavior={scrollBehavior}
-							selectFilesAndImages={selectFilesAndImages}
-							shouldDisableFilesAndImages={attachmentsDisabled}
-							variant="kocode"
-						/>
+			{screen === "chat" && (
+				<footer className={`kocode-input-dock ${selectedCharacter.themeClass}`}>
+					<div className="kocode-compose-row">
+						<button
+							aria-label="ファイルや画像を追加"
+							className="kocode-compose-action"
+							disabled={attachmentsDisabled}
+							onClick={() => void selectFilesAndImages()}
+							type="button">
+							<PlusIcon size={19} />
+						</button>
+						<div className="kocode-composer">
+							<InputSection
+								chatState={chatState}
+								messageHandlers={kocodeMessageHandlers}
+								placeholderText={selectedCharacter.placeholder}
+								scrollBehavior={scrollBehavior}
+								selectFilesAndImages={selectFilesAndImages}
+								shouldDisableFilesAndImages={attachmentsDisabled}
+								variant="kocode"
+							/>
+						</div>
+						<button
+							aria-label="送信"
+							className="kocode-compose-action kocode-send-ornament"
+							onClick={() =>
+								void handleKocodeSendMessage(chatState.inputValue, chatState.selectedImages, chatState.selectedFiles)
+							}
+							type="button">
+							<SendIcon size={18} />
+						</button>
 					</div>
-					<button
-						aria-label="送信"
-						className="kocode-compose-action kocode-send-ornament"
-						onClick={() =>
-							void handleKocodeSendMessage(chatState.inputValue, chatState.selectedImages, chatState.selectedFiles)
-						}
-						type="button">
-						<SendIcon size={21} />
-					</button>
-				</div>
-				<div className="kocode-footer-copy">♡ Kocode はあなたのコーディングを応援するにゃ！</div>
-			</footer>
+					<div className="kocode-footer-copy">♡ Kocode はあなたのコーディングを応援するにゃ！</div>
+				</footer>
+			)}
 		</ChatLayout>
 	)
 }

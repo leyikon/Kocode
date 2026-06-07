@@ -19,7 +19,7 @@ import { TelemetrySetting } from "./TelemetrySetting"
 import { UserInfo } from "./UserInfo"
 // webview will hold state
 export interface ExtensionMessage {
-	type: "grpc_response" // New type for gRPC responses
+	type: "grpc_response" | "kocode_show_legacy" // New type for gRPC responses
 	grpc_response?: GrpcResponse
 }
 

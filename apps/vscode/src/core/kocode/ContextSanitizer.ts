@@ -42,6 +42,8 @@ export class ContextSanitizer {
 			"- ユーザーがまだ知らない概念（例: SSR, Hydration, OAuth）に触れる時は、コード前に 1 行の砕けた説明を添えてください。",
 			"- attempt_completion では、ユーザーが「次に何を見ればよいか」を 1 行だけ案内してください（例: ブラウザで /login を開いてみて）。",
 			"",
+			this.executionModeSection(taskSpec.executionMode),
+			"",
 			`## Goal\n${taskSpec.goal}`,
 			`## Mode\n${taskSpec.mode}`,
 			`## Files\n${files}`,
@@ -50,6 +52,36 @@ export class ContextSanitizer {
 			`## Pending Revisions\n${pending}`,
 			`## Acceptance Criteria\n${criteria}`,
 		].join("\n")
+	}
+
+	/**
+	 * executionMode に応じて Worker の進め方を明示する。
+	 * plan_only / plan_then_execute / execute_directly（既定）で行動を切り替える。
+	 */
+	private executionModeSection(executionMode?: TaskSpec["executionMode"]): string {
+		switch (executionMode) {
+			case "plan_only":
+				return [
+					"## Execution Mode: PLAN ONLY（計画のみ・ファイルを変更しない）",
+					"- 必要なファイルだけを読み、現状を把握してください。",
+					"- 短く分かりやすい「作り方の計画」を出力してください（手順の箇条書きで十分）。",
+					"- ファイルの編集・新規作成・書き込み系コマンドの実行は一切しないでください。",
+					"- 計画は attempt_completion で返し、そこで止まってください。ユーザーの次の指示を待ちます。",
+					"- 勝手に実装へ進まないでください。",
+				].join("\n")
+			case "plan_then_execute":
+				return [
+					"## Execution Mode: PLAN THEN EXECUTE（先に計画→そのまま実装）",
+					"- まず短い文章で「これからどう進めるか」の計画を 1 回伝えてください（専門用語なし・数行）。",
+					"- 計画を伝えたら、確認を待たずにそのまま実装を続けてください。",
+					"- 計画と実装が食い違わないように進めてください。",
+				].join("\n")
+			default:
+				return [
+					"## Execution Mode: EXECUTE（通常の実装）",
+					"- TaskSpec の目標に沿って、必要な調査・編集・検証を行って実装してください。",
+				].join("\n")
+		}
 	}
 
 	/**

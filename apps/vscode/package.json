@@ -194,6 +194,12 @@
 				"icon": "$(book)"
 			},
 			{
+				"command": "kocode.openLegacyClineView",
+				"title": "Open Legacy Cline View",
+				"category": "Kocode",
+				"icon": "$(comment-discussion)"
+			},
+			{
 				"command": "cline.generateGitCommitMessage",
 				"title": "Generate Commit Message with Kocode",
 				"category": "Kocode",

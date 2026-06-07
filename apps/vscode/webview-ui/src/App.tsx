@@ -60,6 +60,16 @@ const AppContent = () => {
 		showUpdateAnnouncementModal()
 	}, [didHydrateState, showWelcome, shouldShowAnnouncement, showAnnouncement, showUpdateAnnouncementModal])
 
+	useEffect(() => {
+		const handleKocodeMessage = (event: MessageEvent) => {
+			if (event.data?.type === "kocode_show_legacy") {
+				setChatExperience("legacy")
+			}
+		}
+		window.addEventListener("message", handleKocodeMessage)
+		return () => window.removeEventListener("message", handleKocodeMessage)
+	}, [])
+
 	if (webviewMode === "kocode-workbench") {
 		return <KocodeWorkbenchView />
 	}
@@ -87,10 +97,7 @@ const AppContent = () => {
 			)}
 			{showWorktrees && <WorktreesView onDone={hideWorktrees} />}
 			{chatExperience === "kocode" ? (
-				<KocodeChatView
-					isHidden={showSettings || showHistory || showMcp || showAccount || showWorktrees}
-					onOpenLegacy={() => setChatExperience("legacy")}
-				/>
+				<KocodeChatView isHidden={showSettings || showHistory || showMcp || showAccount || showWorktrees} />
 			) : (
 				<div className="relative flex h-full min-h-0 flex-col">
 					{/* Legacy chat remains available while Kocode is developed independently. */}

@@ -138,6 +138,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand(commands.AccountButton, () => sendAccountButtonClickedEvent()))
 	context.subscriptions.push(vscode.commands.registerCommand(commands.WorktreesButton, () => sendWorktreesButtonClickedEvent()))
 	context.subscriptions.push(vscode.commands.registerCommand("kocode.openWorkbench", () => webview.openKocodeWorkbenchPanel()))
+	context.subscriptions.push(vscode.commands.registerCommand("kocode.openLegacyClineView", () => webview.openLegacyClineView()))
 
 	/*
 	We use the text document content provider API to show the left side for diff view by creating a

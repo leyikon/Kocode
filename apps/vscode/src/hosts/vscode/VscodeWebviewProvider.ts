@@ -79,6 +79,11 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 		)
 	}
 
+	public async openLegacyClineView(): Promise<void> {
+		await vscode.commands.executeCommand(`${ExtensionRegistryInfo.views.Sidebar}.focus`)
+		await this.webview?.webview.postMessage({ type: "kocode_show_legacy" } satisfies ExtensionMessage)
+	}
+
 	/**
 	 * Initializes and sets up the webview when it's first created.
 	 *

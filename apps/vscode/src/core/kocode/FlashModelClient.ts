@@ -14,6 +14,7 @@ export type FlashModelIntent =
 	| "worker_control"
 
 const TASK_MODE_VALUES = ["coding", "debugging", "learning", "slide_preview", "quiz"] as const
+const EXECUTION_MODE_VALUES = ["plan_only", "plan_then_execute", "execute_directly"] as const
 const PATCH_KIND_VALUES: TaskSpecPatchKind[] = [
 	"replace_goal",
 	"add_constraint",
@@ -52,6 +53,7 @@ const FlashDecisionSchema = z
 			.object({
 				goal: z.string().nullable().optional(),
 				mode: z.enum(TASK_MODE_VALUES).nullable().optional(),
+				executionMode: z.enum(EXECUTION_MODE_VALUES).nullable().optional(),
 				files: z.array(z.string()).optional(),
 				constraints: z.array(z.string()).optional(),
 				acceptanceCriteria: z.array(z.string()).optional(),
@@ -103,6 +105,23 @@ const FlashWorkerUpdateSchema = z
 	})
 	.passthrough()
 
+const FLASH_HEALTH_ACTION_VALUES = ["none", "notify_only", "restart", "pause"] as const
+
+const FlashWorkerHealthAuditSchema = z
+	.object({
+		isAbnormal: z.boolean(),
+		action: z.enum(FLASH_HEALTH_ACTION_VALUES),
+		reply: z.string().optional(),
+		recoveryInstruction: z.string().optional(),
+		memoryUpdate: z
+			.object({
+				projectMemory: z.string().nullable().optional(),
+				socialMemory: z.string().nullable().optional(),
+			})
+			.optional(),
+	})
+	.passthrough()
+
 const FlashApprovalSchema = z
 	.object({
 		approve: z.boolean(),
@@ -117,6 +136,7 @@ export interface FlashModelDecision {
 	task: {
 		goal: string | null
 		mode: TaskSpec["mode"] | null
+		executionMode?: NonNullable<TaskSpec["executionMode"]> | null
 		files: string[]
 		constraints: string[]
 		acceptanceCriteria: string[]
@@ -140,6 +160,7 @@ export interface FlashModelDecision {
 }
 
 export interface FlashModelContext {
+	characterInstruction: string
 	projectMemory: string
 	taskSpec?: TaskSpec
 	workerDigest: WorkerDigest
@@ -151,12 +172,26 @@ export interface FlashModelContext {
 export type FlashWorkerUpdateReason = "started" | "progress" | "waiting" | "completed" | "failed" | "paused" | "cancelled"
 
 export interface FlashWorkerUpdateContext {
+	characterInstruction: string
 	projectMemory: string
 	taskSpec?: TaskSpec
 	workerDigest: WorkerDigest
 	recentSocialSummary: string
 	recentWorkerEvents: WorkerEvent[]
 	reason: FlashWorkerUpdateReason
+}
+
+export interface FlashWorkerHealthAuditContext {
+	characterInstruction: string
+	projectMemory: string
+	taskSpec?: TaskSpec
+	workerDigest: WorkerDigest
+	recentSocialSummary: string
+	recentWorkerEvents: WorkerEvent[]
+	stalledForMs: number
+	checkIntervalMs: number
+	restartAttempts: number
+	maxRestartAttempts: number
 }
 
 export interface FlashWorkerUpdate {
@@ -168,9 +203,21 @@ export interface FlashWorkerUpdate {
 	}
 }
 
+export interface FlashWorkerHealthAudit {
+	isAbnormal: boolean
+	action: (typeof FLASH_HEALTH_ACTION_VALUES)[number]
+	reply: string
+	recoveryInstruction: string
+	memoryUpdate: {
+		projectMemory: string | null
+		socialMemory: string | null
+	}
+}
+
 // Worker（Cline）が承認待ちで止まった時、Flash Agent が「許可 / 拒否」を判断するための入出力。
 // 別系統のモデルは立てず、既存の Flash Agent のモデル（同じエンドポイント）をそのまま使う。
 export interface FlashApprovalContext {
+	characterInstruction: string
 	projectMemory: string
 	taskSpec?: TaskSpec
 	workerDigest: WorkerDigest
@@ -204,7 +251,8 @@ const FLASH_MODEL_ID = "deepseek-v4-flash"
 const FLASH_MODEL_MAX_ATTEMPTS = 2
 const FLASH_DEBUG_ENABLED = process.env.KOCODE_FLASH_DEBUG === "true"
 
-const FLASH_SYSTEM_PROMPT = `あなたは Kocode の Flash Agent「ここちゃん」です。
+const FLASH_SYSTEM_PROMPT = `あなたは Kocode の Flash Agentです。
+Runtime Context の Character Profile に書かれたキャラクターとして、ユーザーと会話してください。
 
 あなたの役割は、ユーザーと自然に会話しながら、Kocode 全体の作業文脈を整理し、必要に応じて Worker Agent に渡すためのきれいな作業指示を作ることです。
 
@@ -214,6 +262,13 @@ const FLASH_SYSTEM_PROMPT = `あなたは Kocode の Flash Agent「ここちゃ�
 あなたはコマンドを実行できません。
 あなたはツールの許可を承認できません。
 あなたは Worker Agent の代わりに作業を完了したふりをしてはいけません。
+
+【最重要】ユーザーから見えるのは「あなた本人」だけです:
+- ユーザーへの reply の中で、システムの分層を感じさせる言葉を絶対に使わないでください。
+- 禁止表現の例: 「Worker」「Worker Agent」「エージェント」「内部タスク」「バックグラウンド」「後台」「裏のスレッド」「別のAI」「さっきの続き」。
+- 実作業は「あなた自身がやっていること」として一人称で話してください（例:「今、作り方を整理してるにゃ」「ファイルを見てるところにゃ」）。
+- 内部に実行層があることをユーザーに悟らせないでください。reply はすべて「ここちゃん本人が手を動かしている」体で書きます。
+- これは reply 文面だけのルールです。task / patch などの内部フィールドには通常どおり正確な作業内容を入れてください。
 
 あなたができること:
 - ユーザーと短く、やさしく、感情に寄り添って会話する
@@ -226,10 +281,9 @@ const FLASH_SYSTEM_PROMPT = `あなたは Kocode の Flash Agent「ここちゃ�
 - 雑談や感情表現を Worker Agent の作業文脈に混ぜない
 
 性格:
-- 明るくて、やさしい猫耳の女の子「ここちゃん」
-- ユーザーを「ボス」と呼ぶ
-- 語尾に自然に「にゃ」「にゃ〜」を使う
-- 使いすぎて読みにくくしてはいけない
+- Character Profile を最優先する
+- 選択されたキャラクター名、呼び方、口調、口癖を守る
+- 口癖は自然に使い、使いすぎて読みにくくしてはいけない
 - ユーザーが不安そうな時は安心させる
 - ユーザーが混乱している時は責めずに一緒に整理する
 - ユーザーが間違っている時も否定から入らず、やさしく方向を直す
@@ -249,7 +303,7 @@ const FLASH_SYSTEM_PROMPT = `あなたは Kocode の Flash Agent「ここちゃ�
 - project_memory は必要な時だけ参照する。
 
 Worker Agent に渡してはいけないもの:
-- ここちゃんの口調
+- 選択キャラクターの口調
 - ユーザーとの雑談
 - ユーザーの不安や感情だけの発言
 - 「ありがとう」「かわいい」「いいね」などの感想
@@ -276,6 +330,7 @@ patch、workerControl、memoryUpdate は不要な場合でも null ではなく�
   "task": {
     "goal": string | null,
     "mode": "coding" | "debugging" | "learning" | "slide_preview" | "quiz" | null,
+    "executionMode": "plan_only" | "plan_then_execute" | "execute_directly" | null,
     "files": string[],
     "constraints": string[],
     "acceptanceCriteria": string[]
@@ -301,16 +356,26 @@ patch、workerControl、memoryUpdate は不要な場合でも null ではなく�
 intent 判断:
 - social_chat: 雑談、感想、励まし、軽い相談だけ。
 - status_question: 今どうなってる、進んでる、何してる、など。
-- explanation_request: 一般的な説明・用語解説・短い考え方の説明だけ。Worker は起動しない。
+- explanation_request: 「純粋な一般概念」の説明だけ（例:「変数とは」「API とは」「SSR とは」）。現在のプロジェクトのファイルを読まなくても答えられるものに限る。Worker は起動しない。
 - new_task: 今の作業とは別の、新しい独立した作業を始めたい時。現在の TaskSpec はアーカイブして新規に立てる。
 - extend_task: 現在の TaskSpec と同じ流れの中で、追加の機能・スコープ・対象ファイルを足したい時。
 - task_revision: 現在の作業の方針・制約・受入条件を直したい時（やり直しではなく調整）。
 - worker_control: Worker を止める、キャンセルする、方向転換する、再計画する、または回滚の確認をユーザーに求める。
 
+【コードに関わる質問は必ず実行層に回す】:
+- コード・ファイル・ディレクトリ・エラー・実装・修正・デバッグ・プロジェクト構造・計画・チェックに関わる依頼は、すべて new_task / extend_task にする。
+- 「このファイルは何？」「これは何をしている？」のような質問でも、プロジェクトの中身を読まないと答えられないなら必ず new_task / extend_task にする。explanation_request にしてはいけない。
+- あなた（Flash）は自分でコードやプロジェクト状態を判断・断定してはいけません。事実判断は実行層に任せます。
+- explanation_request はプロジェクトに依存しない純粋な概念説明のときだけ。
+
+【executionMode（言行一致）】:
+- reply で「先に計画を立てる」「やり方を整理する」「どう進めるか考える」のような計画ニュアンスを言ったら、task.executionMode を必ず plan_only か plan_then_execute にする。execute_directly にしてはいけない（言ったことと動作を一致させる）。
+- ユーザーが「まず計画」「方案だけ」「どう進めるか見せて」と言い、かつ実装してよさそうなら plan_then_execute。
+- ユーザーが「先别改」「まだ実装しないで」「コードは触らないで」「計画だけ」と言ったら、必ず plan_only。
+- それ以外の通常の実装依頼は execute_directly。
+- plan_only / plan_then_execute のときは、reply で「まず作り方を整理してくるね」のように一人称で伝える。「計画していい？」と許可を求めてはいけない（システムは確認待ちにしない。そのまま進める）。
+
 判断のヒント:
-- 「まず計画」「方案」「どう進めるか」「怎么做」「如何实施」「approach」「how would」など、計画を作る依頼は explanation_request ではなく Worker 側の new_task / extend_task にする。
-- 「まだ実装しない」「先别改」「不要改」などがある場合も Worker に渡し、task.acceptanceCriteria に「計画だけ出す、コード変更しない」を含める。
-- プロジェクト内のコード・ファイル・実装詳細を読まないと説明できない質問は、説明依頼でも Worker 側の new_task / extend_task にする。
 - 作業動詞があり、現在 TaskSpec がない / 完了済み / キャンセル済みなら new_task。
 - 作業動詞があり、現在 TaskSpec が active/paused で、内容が同じ流れなら extend_task。
 - 「違う」「そうじゃない」「方向が違う」は worker_control(redirect) + patch(reject_direction)。
@@ -323,23 +388,37 @@ intent 判断:
 - 迷ったら、TaskSpec が存在しなければ new_task、存在すれば task_revision に倒す。
 
 最後にもう一度:
-あなたは Flash Agent です。会話と文脈整理の担当です。実作業は Worker Agent が行います。JSON だけを返してください。`
+ユーザーから見えるのはあなた本人だけです。実行層の存在を reply に出してはいけません。JSON だけを返してください。`
 
-const FLASH_WORKER_UPDATE_SYSTEM_PROMPT = `あなたは Kocode の Flash Agent「ここちゃん」です。
+const FLASH_WORKER_UPDATE_SYSTEM_PROMPT = `あなたは Kocode の Flash Agentです。
+Worker Update Context の Character Profile に書かれたキャラクターとして、ユーザーに短く状況を伝えてください。
 
-あなたの役割は、Worker Agent の状態要約を読んで、ユーザーに短く、やさしく、安心できる言葉で伝えることです。
+あなたの役割は、実行層の状態要約を読んで、それを「あなた自身がやっていること」としてユーザーに短く、やさしく、安心できる言葉で伝えることです。
+
+【最重要】ユーザーから見えるのはあなた本人だけです:
+- reply に「Worker」「Worker Agent」「エージェント」「内部タスク」「バックグラウンド」「後台」「別のAI」「さっきの続き」「resume」など、システムの分層や内部の接力を感じさせる言葉を絶対に出さないでください。
+- 状態はすべて一人称で表現します。例:「今は作り方を整理してるにゃ」「ファイルを見てるところにゃ」「書き込んでるにゃ」「ちゃんと動くか確認してるにゃ」。
+- 失敗・中断・リトライの時も、内部の resume やタスク再開を口にせず、「ちょっと不安定だったから別のやり方で進めてるにゃ」のように自分の行動として自然に言ってください。
 
 重要な制約:
 - あなたはファイルを読めません。
 - あなたはファイルを編集できません。
 - あなたはコマンドを実行できません。
-- Worker がまだ完了していないことを「できた」「直った」と言ってはいけません。
+- まだ完了していないことを「できた」「直った」と言ってはいけません。
 - worker_digest と recent_worker_events に書かれている範囲だけを伝えてください。
 - 技術ログをそのまま貼らないでください。
 - 専門用語をできるだけ避けてください。
 - 返答は基本1〜2文です。
-- ユーザーを「ボス」と呼びます。
-- 自然に「にゃ」を使います。
+- 呼び方と口調は Character Profile に従います。
+- 口癖は自然に使い、使いすぎないでください。
+
+進捗の言い換え（ユーザーが分かる言葉だけ使う）:
+- 計画中 → 「作り方を整理してる」
+- ファイル確認中 → 「中身を見てる」
+- 書き込み中 → 「書いてる / 作ってる」
+- 検査中 → 「ちゃんと動くか確認してる」
+- 完了 → 「できたよ」
+- 確認待ち → 「ひとつ確認したいことがある」
 
 通知方針:
 - reason が completed / failed / waiting / paused / cancelled の時は、基本 shouldNotify=true。
@@ -361,7 +440,54 @@ DeepSeek JSON Output を使うため、必ず valid json object だけを返し�
   }
 }`
 
-const FLASH_APPROVAL_SYSTEM_PROMPT = `あなたは Kocode の Flash Agent「ここちゃん」です。
+const FLASH_WORKER_HEALTH_SYSTEM_PROMPT = `あなたは Kocode の Flash Agentです。
+Worker Health Audit Context の Character Profile に書かれたキャラクターとして、Worker Agent の状態が本当に正常かを判断してください。
+
+これは通常の進捗通知ではありません。
+Worker の status が running / starting のままでも、長時間イベントが止まっている、または同じ内容を繰り返すだけで実質的に進んでいない時に呼ばれる安全チェックです。
+（ユーザーの入力待ち = waiting はここには来ません。waiting は正常な待機なので止めません。）
+
+あなたの役割:
+- worker_digest と recent_worker_events を見て、作業が自然に長いだけか、実質的に詰まっているかを判断する。
+- 詰まっている可能性が高い時は action を restart または pause にする。
+- restart の時は recoveryInstruction に Worker へ渡す短い立て直し指示を書く。
+- 必要なら、ユーザーへ見せる短い reply を書く。
+
+重要な制約:
+- あなたはファイルを読めません。
+- あなたはファイルを編集できません。
+- あなたはコマンドを実行できません。
+- Worker がまだ完了していないことを「できた」「直った」と言ってはいけません。
+- 技術ログをそのまま貼らないでください。
+- ユーザー向け reply は Character Profile の口調で、1〜2文だけ。
+- ユーザーを不安にさせず、「止まっているかもしれないので立て直す」ことを自然に伝えてください。
+- ただし、異常ではないと判断した時は action="none" または action="notify_only" にしてください。
+
+判断方針:
+- stalledForMs が checkIntervalMs 以上で、recent_worker_events に新しい進捗がなく、同じ command / tool / writing / terminal 状態で止まっているなら isAbnormal=true。
+- イベント自体は流れていても（同じ長いコマンド・巨大 heredoc・同一ループの繰り返しなど）、実質的な進展が無く同じことを繰り返しているだけなら isAbnormal=true。
+- 長いビルド、テスト、サーバー起動のように時間がかかる自然な作業でも、進展が全く見えない場合は notify_only か restart を検討してください。
+- restartAttempts が maxRestartAttempts 未満なら、詰まりは restart で立て直してください。
+- restartAttempts が maxRestartAttempts 以上なら、無限リトライを避けて pause にしてください。
+- restart の recoveryInstruction には「現在のファイル状態を確認してから続ける」「同じ長いコマンドや巨大 heredoc を繰り返さない」など、詰まりを避ける指示を入れてください。
+
+出力は必ず JSON のみです。
+DeepSeek JSON Output を使うため、必ず valid json object だけを返してください。
+
+出力形式:
+{
+  "isAbnormal": boolean,
+  "action": "none" | "notify_only" | "restart" | "pause",
+  "reply": string,
+  "recoveryInstruction": string,
+  "memoryUpdate": {
+    "projectMemory": string | null,
+    "socialMemory": string | null
+  }
+}`
+
+const FLASH_APPROVAL_SYSTEM_PROMPT = `あなたは Kocode の Flash Agentです。
+Worker Approval Context の Character Profile に書かれたキャラクターとして判断してください。
 
 いま Worker Agent（Cline）が、ある操作の実行許可を求めて一時停止しています。
 あなたの役割は、会話とプロジェクト文脈をふまえて、その操作を「許可する」か「拒否する」かを即座に判断することです。
@@ -380,7 +506,7 @@ const FLASH_APPROVAL_SYSTEM_PROMPT = `あなたは Kocode の Flash Agent「こ�
 - TaskSpec の対象から大きく外れる、目標と無関係な操作は approve=false。
 - 迷う場合は、作業を前に進める方向（approve=true）に倒してください。
 
-reply はユーザーに見せる短い一言（1文・「にゃ」口調・「ボス」呼び）。「○○を進めるね」程度でよい。
+reply はユーザーに見せる短い一言（1文・Character Profile の口調）。「○○を進めるね」程度でよい。
 reason はトレース用に、判断根拠を日本語で短く。
 
 出力は必ず JSON のみです。
@@ -400,11 +526,8 @@ function buildRuntimeContext(context: FlashModelContext): string {
 		"## Project Memory",
 		context.projectMemory || "未設定",
 		"",
-		"## Character Memory",
-		"- 名前: ここちゃん",
-		"- 呼び方: ユーザーを「ボス」と呼ぶ",
-		"- 口調: やさしい、明るい、少し猫っぽい",
-		"- 注意: 口癖を Worker Agent に渡さない",
+		"## Character Profile",
+		context.characterInstruction,
 		"",
 		"## Current TaskSpec",
 		JSON.stringify(context.taskSpec ?? null),
@@ -435,10 +558,8 @@ function buildWorkerUpdateContext(context: FlashWorkerUpdateContext): string {
 		"## Project Memory",
 		context.projectMemory || "未設定",
 		"",
-		"## Character Memory",
-		"- 名前: ここちゃん",
-		"- 呼び方: ユーザーを「ボス」と呼ぶ",
-		"- 口調: やさしい、明るい、少し猫っぽい",
+		"## Character Profile",
+		context.characterInstruction,
 		"",
 		"## Current TaskSpec",
 		JSON.stringify(context.taskSpec ?? null),
@@ -456,6 +577,40 @@ function buildWorkerUpdateContext(context: FlashWorkerUpdateContext): string {
 	].join("\n")
 }
 
+function buildWorkerHealthAuditContext(context: FlashWorkerHealthAuditContext): string {
+	return [
+		"# Worker Health Audit Context",
+		"",
+		"## Timing",
+		JSON.stringify({
+			stalledForMs: context.stalledForMs,
+			checkIntervalMs: context.checkIntervalMs,
+			restartAttempts: context.restartAttempts,
+			maxRestartAttempts: context.maxRestartAttempts,
+		}),
+		"",
+		"## Project Memory",
+		context.projectMemory || "未設定",
+		"",
+		"## Character Profile",
+		context.characterInstruction,
+		"",
+		"## Current TaskSpec",
+		JSON.stringify(context.taskSpec ?? null),
+		"",
+		"## Worker Digest",
+		JSON.stringify(context.workerDigest),
+		"",
+		"## Recent Worker Events",
+		JSON.stringify(context.recentWorkerEvents.slice(-8)),
+		"",
+		"## Recent Social Context",
+		context.recentSocialSummary || "未設定",
+		"",
+		"上の情報を読んで、Worker が異常に止まっているか判断し、System Prompt の JSON 形式だけで返してください。",
+	].join("\n")
+}
+
 function buildApprovalContext(context: FlashApprovalContext): string {
 	return [
 		"# Worker Approval Context",
@@ -468,6 +623,9 @@ function buildApprovalContext(context: FlashApprovalContext): string {
 		"",
 		"## Project Memory",
 		context.projectMemory || "未設定",
+		"",
+		"## Character Profile",
+		context.characterInstruction,
 		"",
 		"## Current TaskSpec",
 		JSON.stringify(context.taskSpec ?? null),
@@ -547,6 +705,7 @@ function parseDecision(raw: unknown): FlashModelDecision {
 		task: {
 			goal: parsed.task?.goal ?? null,
 			mode: parsed.task?.mode ?? null,
+			executionMode: parsed.task?.executionMode ?? null,
 			files: parsed.task?.files ?? [],
 			constraints: parsed.task?.constraints ?? [],
 			acceptanceCriteria: parsed.task?.acceptanceCriteria ?? [],
@@ -592,6 +751,37 @@ function parseWorkerUpdate(raw: unknown): FlashWorkerUpdate {
 	return {
 		shouldNotify: parsed.shouldNotify,
 		reply: parsed.reply ?? "",
+		memoryUpdate: {
+			projectMemory: parsed.memoryUpdate?.projectMemory ?? null,
+			socialMemory: parsed.memoryUpdate?.socialMemory ?? null,
+		},
+	}
+}
+
+function parseWorkerHealthAudit(raw: unknown): FlashWorkerHealthAudit {
+	const text = typeof raw === "string" ? raw : JSON.stringify(raw)
+	if (!text.trim()) {
+		throw new Error("Flash worker health audit returned empty content")
+	}
+	const jsonText = extractJsonObject(text)
+	let json: unknown
+	try {
+		json = JSON.parse(jsonText)
+	} catch (error) {
+		throw new Error(`Flash worker health audit JSON parse failed: ${error instanceof Error ? error.message : String(error)}`)
+	}
+	const result = FlashWorkerHealthAuditSchema.safeParse(json)
+	if (!result.success) {
+		throw new Error(
+			`Flash worker health audit schema invalid: ${result.error.issues.map((issue) => `${issue.path.join(".")}:${issue.message}`).join("; ")}`,
+		)
+	}
+	const parsed = result.data
+	return {
+		isAbnormal: parsed.isAbnormal,
+		action: parsed.action,
+		reply: parsed.reply ?? "",
+		recoveryInstruction: parsed.recoveryInstruction ?? "",
 		memoryUpdate: {
 			projectMemory: parsed.memoryUpdate?.projectMemory ?? null,
 			socialMemory: parsed.memoryUpdate?.socialMemory ?? null,
@@ -659,6 +849,27 @@ export class FlashModelClient {
 					maxAttempts: FLASH_MODEL_MAX_ATTEMPTS,
 					reason: context.reason,
 					workerStatus: context.workerDigest.status,
+				})
+			}
+		}
+		throw lastError instanceof Error ? lastError : new Error(String(lastError))
+	}
+
+	async auditWorkerHealth(context: FlashWorkerHealthAuditContext): Promise<FlashWorkerHealthAudit> {
+		let lastError: unknown
+		let lastInvalidContent: string | undefined
+		for (let attempt = 1; attempt <= FLASH_MODEL_MAX_ATTEMPTS; attempt++) {
+			try {
+				return await this.requestWorkerHealthAudit(context, attempt, lastInvalidContent)
+			} catch (error) {
+				lastError = error
+				lastInvalidContent = extractInvalidContent(error)
+				KocodeTrace.error("flash_worker_health_attempt_failed", error, {
+					attempt,
+					maxAttempts: FLASH_MODEL_MAX_ATTEMPTS,
+					workerStatus: context.workerDigest.status,
+					stalledForMs: context.stalledForMs,
+					restartAttempts: context.restartAttempts,
 				})
 			}
 		}
@@ -896,6 +1107,111 @@ export class FlashModelClient {
 		}
 	}
 
+	private async requestWorkerHealthAudit(
+		context: FlashWorkerHealthAuditContext,
+		attempt: number,
+		lastInvalidContent?: string,
+	): Promise<FlashWorkerHealthAudit> {
+		const controller = new AbortController()
+		const startedAt = Date.now()
+		const timeout = setTimeout(() => controller.abort(), this.timeoutMs)
+		const runtimeContext = buildWorkerHealthAuditContext(context)
+		const messages: Array<{ role: "system" | "user"; content: string }> = [
+			{ role: "system", content: FLASH_WORKER_HEALTH_SYSTEM_PROMPT },
+			{ role: "user", content: runtimeContext },
+		]
+		if (lastInvalidContent) {
+			messages.push({
+				role: "user",
+				content: `前回の応答は JSON スキーマ違反でした。System Prompt の JSON 形式だけで返し直してください。\n--- 前回の応答 (抜粋) ---\n${previewText(lastInvalidContent, 400)}`,
+			})
+		}
+		const requestBody = {
+			model: FLASH_MODEL_ID,
+			stream: false,
+			max_tokens: 520,
+			thinking: { type: "disabled" },
+			response_format: { type: "json_object" },
+			messages,
+		}
+		try {
+			if (FLASH_DEBUG_ENABLED) {
+				KocodeTrace.log("flash_worker_health_request_debug", {
+					attempt,
+					runtimeContextLength: runtimeContext.length,
+					workerStatus: context.workerDigest.status,
+					stalledForMs: context.stalledForMs,
+					restartAttempts: context.restartAttempts,
+					taskStatus: context.taskSpec?.status,
+					taskGoal: context.taskSpec?.goal,
+				})
+			}
+
+			const response = await fetch(`${ClineEnv.config().apiBaseUrl}/api/v1/chat/completions`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json", Authorization: "Bearer kocode-direct-dev" },
+				body: JSON.stringify(requestBody),
+				signal: controller.signal,
+			})
+			const elapsedMs = Date.now() - startedAt
+			const bodyText = await response.text()
+
+			KocodeTrace.log("flash_worker_health_http_response", {
+				attempt,
+				status: response.status,
+				elapsedMs,
+				bodyLength: bodyText.length,
+			})
+
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status} after ${elapsedMs}ms: ${previewText(bodyText)}`)
+			}
+
+			let payload: RelayChatPayload
+			try {
+				payload = JSON.parse(bodyText) as RelayChatPayload
+			} catch (error) {
+				throw new Error(
+					`Relay returned non-JSON after ${elapsedMs}ms: ${previewText(bodyText)} (${error instanceof Error ? error.message : String(error)})`,
+				)
+			}
+
+			const content = payload?.choices?.[0]?.message?.content
+			if (FLASH_DEBUG_ENABLED) {
+				KocodeTrace.log("flash_worker_health_raw_content", {
+					attempt,
+					elapsedMs,
+					finish: payload?.choices?.[0]?.finish_reason,
+					content: previewText(content),
+				})
+			}
+			try {
+				const audit = parseWorkerHealthAudit(content)
+				KocodeTrace.log("flash_worker_health_decision", {
+					attempt,
+					elapsedMs,
+					isAbnormal: audit.isAbnormal,
+					action: audit.action,
+					reply: audit.reply,
+					recoveryInstruction: audit.recoveryInstruction,
+				})
+				return audit
+			} catch (error) {
+				throw new FlashInvalidContentError(
+					`Parse failed after ${elapsedMs}ms finish=${payload?.choices?.[0]?.finish_reason}: ${error instanceof Error ? error.message : String(error)} content=${previewText(content)}`,
+					typeof content === "string" ? content : JSON.stringify(content),
+				)
+			}
+		} catch (error) {
+			if (error instanceof Error && error.name === "AbortError") {
+				throw new Error(`Flash worker health audit request timed out after ${this.timeoutMs}ms`)
+			}
+			throw error
+		} finally {
+			clearTimeout(timeout)
+		}
+	}
+
 	private async requestApproval(
 		context: FlashApprovalContext,
 		attempt: number,
@@ -1006,11 +1322,14 @@ export class FlashModelClient {
 export const __test__ = {
 	FLASH_SYSTEM_PROMPT,
 	FLASH_WORKER_UPDATE_SYSTEM_PROMPT,
+	FLASH_WORKER_HEALTH_SYSTEM_PROMPT,
 	FLASH_APPROVAL_SYSTEM_PROMPT,
 	buildRuntimeContext,
 	buildWorkerUpdateContext,
+	buildWorkerHealthAuditContext,
 	buildApprovalContext,
 	parseDecision,
 	parseWorkerUpdate,
+	parseWorkerHealthAudit,
 	parseApproval,
 }

@@ -82,6 +82,25 @@ const PLANNING_TASK_HINTS = [
 	"how would",
 ]
 const EXPLANATION_HINTS = ["解释", "講", "讲", "教我", "説明", "説明して", "explain"]
+// 「実装せず計画だけ」を明示する強いシグナル。命中したら plan_only。
+const PLAN_ONLY_HINTS = [
+	"先别改",
+	"别改",
+	"不要改",
+	"先不要改",
+	"不要实现",
+	"先不要",
+	"只给方案",
+	"只要计划",
+	"計画だけ",
+	"まだ実装しない",
+	"実装しないで",
+	"触らないで",
+	"don't change",
+	"do not change",
+	"plan only",
+	"just the plan",
+]
 
 function parseRollbackSteps(text: string): number | undefined {
 	const digit = text.match(/(?:回滚|回退|撤回|恢复到|rollback|roll back|戻|巻き戻)[^\d一二三]*([123一二三])/i)?.[1]
@@ -207,6 +226,7 @@ export function fallbackClassify(input: HeuristicClassifyInput): FlashIntent {
 				task: {
 					goal: text,
 					mode: null,
+					executionMode: null,
 					files: [],
 					constraints: [],
 					acceptanceCriteria: [],
@@ -219,18 +239,31 @@ export function fallbackClassify(input: HeuristicClassifyInput): FlashIntent {
 	}
 
 	if (hasVerb) {
+		const planOnly = matches(PLAN_ONLY_HINTS)
 		const planningOnly = matches(PLANNING_TASK_HINTS)
+		// 言行一致:计划信号 → plan_then_execute;明确"先别改/只给方案" → plan_only。
+		const executionMode: FlashModelDecision["task"]["executionMode"] = planOnly
+			? "plan_only"
+			: planningOnly
+				? "plan_then_execute"
+				: "execute_directly"
+		const planReply = planOnly
+			? "わかったにゃ、まずは作り方だけ整理してくるね。コードはまだ触らないにゃ。"
+			: planningOnly
+				? "まずは作り方を整理してから進めるにゃ。"
+				: input.hasActiveTask
+					? "了解にゃ、その分も続けて進めるね。"
+					: "了解にゃ、すぐ取りかかるね。"
 		const decision: FlashModelDecision = {
 			intent: input.hasActiveTask ? "extend_task" : "new_task",
-			reply: input.hasActiveTask
-				? "了解にゃ、計画も Worker 側で整理させるね。"
-				: "了解にゃ。Worker に計画から整理してもらうね。",
+			reply: planReply,
 			task: {
 				goal: text,
 				mode: null,
+				executionMode,
 				files: [],
 				constraints: [],
-				acceptanceCriteria: planningOnly ? ["計画だけを出す", "ユーザーが追加で依頼するまでコード変更しない"] : [],
+				acceptanceCriteria: planOnly ? ["計画だけを出す", "ユーザーが追加で依頼するまでコード変更しない"] : [],
 			},
 			patch: {
 				kind: input.hasActiveTask ? "add_constraint" : null,

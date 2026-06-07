@@ -25,8 +25,16 @@ const WORKER_NOTICE_COOLDOWN_MS = 8_000
 const PROGRESS_DEBOUNCE_MS = 1_500
 const MAX_CRITICAL_WORKER_UPDATE_RETRIES = 2
 const MAX_ROLLBACK_STEPS = 3
+const WORKER_HEALTH_CHECK_INTERVAL_MS = 180_000
+const MAX_STALL_RECOVERY_ATTEMPTS = 2
+// restart 後にこの時間ぶん「実質的な進展」が続いたら、Worker は立て直せたと見なして
+// 停滞リトライ計数をリセットする（#5：恢复后过早 pause を防ぐ）。
+const STALL_RECOVERY_RESET_MS = WORKER_HEALTH_CHECK_INTERVAL_MS
 // 终态去重键的硬上限，防止超长会话下集合无界增长（#8）。
 const MAX_TERMINAL_DEDUP_KEYS = 64
+// waiting はユーザーの入力待ちという正常状態なので健康審計の対象にしない（#1）。
+// running / starting だけを「進んでいるはず」とみなして停滞を判定する。
+const HEALTH_AUDIT_STATUSES = new Set<WorkerDigest["status"]>(["starting", "running"])
 
 // 在 Worker 正在运行时收到 new_task，需要先向用户确认再丢弃当前任务（#4）。
 interface PendingTaskSwitch {
@@ -93,6 +101,15 @@ export class KocodeOrchestrator {
 	private lastProgressDigestKey = ""
 	private readonly notifiedTerminalWorkerKeys = new Set<string>()
 	private progressDebounceTimer?: ReturnType<typeof setTimeout>
+	private workerHealthTimer?: ReturnType<typeof setInterval>
+	private workerHealthCheckInFlight = false
+	private readonly stallRecoveryAttempts = new Map<string, number>()
+	// 進度签名（digest + 最近事件指纹）和它最后变化的时刻。lastEventAt だけだと
+	// 「同じ内容を流し続ける死循环」を検知できないため、実质进展で停滞を測る（#2）。
+	private progressSignature = ""
+	private progressSignatureAt = Date.now()
+	// 各 key の直近 restart 时刻。restart 後に十分进展が続いたら計数をリセットする（#5）。
+	private readonly lastStallRestartAt = new Map<string, number>
 	private pendingRollback?: PendingRollbackConfirmation
 	private pendingTaskSwitch?: PendingTaskSwitch
 	// 串行化用户消息处理，避免并发 sendUserMessage 交错改写 TaskSpec 状态（#1 并发场景）。
@@ -108,6 +125,9 @@ export class KocodeOrchestrator {
 		this.unsubscribeWorkerMonitor = this.bus.subscribe((event) => {
 			void this.handleWorkerEventForFlash(event)
 		})
+		this.workerHealthTimer = setInterval(() => {
+			void this.auditWorkerHealth()
+		}, WORKER_HEALTH_CHECK_INTERVAL_MS)
 	}
 
 	/**
@@ -192,6 +212,7 @@ export class KocodeOrchestrator {
 			hasActiveTask,
 			taskSpec,
 			this.messages.map((message) => ({ author: message.author, text: message.text })),
+			request.characterId,
 		)
 
 		KocodeTrace.log("orchestrator_intent", {
@@ -302,6 +323,7 @@ export class KocodeOrchestrator {
 				const draft: TaskSpecDraft = {
 					goal: intent.decision.task.goal ?? request.text,
 					mode: intent.decision.task.mode,
+					executionMode: intent.decision.task.executionMode,
 					files: [...(intent.decision.task.files ?? []), ...(request.files ?? [])],
 					constraints: intent.decision.task.constraints,
 					acceptanceCriteria: intent.decision.task.acceptanceCriteria,
@@ -440,6 +462,10 @@ export class KocodeOrchestrator {
 			clearTimeout(this.progressDebounceTimer)
 			this.progressDebounceTimer = undefined
 		}
+		if (this.workerHealthTimer) {
+			clearInterval(this.workerHealthTimer)
+			this.workerHealthTimer = undefined
+		}
 		this.unsubscribeWorkerMonitor()
 		this.worker.dispose()
 	}
@@ -450,6 +476,7 @@ export class KocodeOrchestrator {
 			author: "user",
 			text: request.text,
 			ts: Date.now(),
+			characterId: request.characterId,
 			images: request.images,
 			files: request.files,
 		}
@@ -610,6 +637,9 @@ export class KocodeOrchestrator {
 			return
 		}
 
+		// 实质进展の指纹を更新：内容が変わった時だけ「進んだ」とみなす（#2）。
+		this.refreshProgressSignature()
+
 		try {
 			if (event.type === "worker_status") {
 				await this.handleWorkerStatusForFlash(event.digest)
@@ -643,16 +673,20 @@ export class KocodeOrchestrator {
 				this.scheduleProgressDebounced()
 				break
 			case "completed":
+				this.clearStallRecovery(digest.taskId)
 				await this.emitTaskSpec(this.taskSpecManager.markCompleted())
 				await this.scheduleWorkerUpdate("completed", { critical: true })
 				break
 			case "failed":
+				this.clearStallRecovery(digest.taskId)
 				await this.scheduleWorkerUpdate("failed", { critical: true })
 				break
 			case "paused":
+				this.clearStallRecovery(digest.taskId)
 				await this.scheduleWorkerUpdate("paused", { critical: true })
 				break
 			case "cancelled":
+				this.clearStallRecovery(digest.taskId)
 				await this.scheduleWorkerUpdate("cancelled", { critical: true })
 				break
 		}
@@ -852,5 +886,220 @@ export class KocodeOrchestrator {
 
 	private progressDigestKey(digest: WorkerDigest): string {
 		return [digest.taskId ?? "no-task", digest.status, digest.title, digest.summary].join(":")
+	}
+
+	// digest の摘要 + 最近イベントの内容から「進度指纹」を作る。lastEventAt（時刻）ではなく
+	// 内容で進展を測ることで、同じ出力を流し続ける死循环も「停滞」として検知できる（#2）。
+	private computeProgressSignature(): string {
+		const digest = this.bus.getDigest()
+		const recent = this.bus
+			.getWorkerEvents()
+			.slice(-8)
+			.map((event) => `${event.kind}|${event.title}|${event.detail ?? ""}`)
+			.join("~")
+		return [digest.taskId ?? "no-task", digest.status, digest.title, digest.summary, recent].join("::")
+	}
+
+	private refreshProgressSignature(): void {
+		const signature = this.computeProgressSignature()
+		if (signature !== this.progressSignature) {
+			this.progressSignature = signature
+			this.progressSignatureAt = Date.now()
+		}
+	}
+
+	private async auditWorkerHealth(): Promise<void> {
+		if (this.disposed || this.workerHealthCheckInFlight) {
+			return
+		}
+		const digest = this.bus.getDigest()
+		const taskSpec = this.taskSpecManager.getTaskSpec()
+		if (!this.worker.isRunning() || !HEALTH_AUDIT_STATUSES.has(digest.status)) {
+			return
+		}
+		const now = Date.now()
+		// 实质进展が最後に起きてからの时间で停滞を测る（lastEventAt ではなく progressSignatureAt）（#2）。
+		const stalledForMs = now - this.progressSignatureAt
+		if (stalledForMs < WORKER_HEALTH_CHECK_INTERVAL_MS) {
+			return
+		}
+
+		const taskKey = this.workerHealthTaskKey(digest, taskSpec?.id)
+		// restart 後に十分进展が続いていたら、立て直せたと見なして計数をリセットする（#5）。
+		this.maybeResetStallRecovery(taskKey, now)
+		const restartAttempts = this.stallRecoveryAttempts.get(taskKey) ?? 0
+		this.workerHealthCheckInFlight = true
+		try {
+			KocodeTrace.log("worker_health_audit_start", {
+				taskKey,
+				workerStatus: digest.status,
+				stalledForMs,
+				restartAttempts,
+				lastEventAt: digest.lastEventAt,
+				progressSignatureAt: this.progressSignatureAt,
+				taskStatus: taskSpec?.status,
+				taskGoal: taskSpec?.goal,
+			})
+			const audit = await this.flash.auditWorkerHealth(digest, taskSpec, this.bus.getWorkerEvents().slice(-8), {
+				stalledForMs,
+				checkIntervalMs: WORKER_HEALTH_CHECK_INTERVAL_MS,
+				restartAttempts,
+				maxRestartAttempts: MAX_STALL_RECOVERY_ATTEMPTS,
+			})
+			if (!audit) {
+				KocodeTrace.warn("worker_health_audit_unavailable", { taskKey, stalledForMs })
+				await this.recoverStalledWorkerWithoutUserReply(taskKey, restartAttempts, "Flash health audit unavailable.")
+				return
+			}
+			KocodeTrace.log("worker_health_audit_result", {
+				taskKey,
+				isAbnormal: audit.isAbnormal,
+				action: audit.action,
+				reply: audit.reply,
+				recoveryInstruction: audit.recoveryInstruction,
+			})
+			if (audit.reply.trim()) {
+				await this.sayFlash(audit.reply.trim(), { workerNotice: true })
+			}
+			if (!audit.isAbnormal || audit.action === "none" || audit.action === "notify_only") {
+				return
+			}
+			// 恢复动作は sendChain に乗せて直列化し、ユーザー消息処理と状态を交错させない（#3）。
+			await this.runStallRecovery(taskKey, audit.action, restartAttempts, audit.recoveryInstruction || audit.reply)
+		} catch (error) {
+			KocodeTrace.error("worker_health_audit_failed", error, {
+				taskKey,
+				stalledForMs,
+				workerStatus: digest.status,
+			})
+			await this.recoverStalledWorkerWithoutUserReply(taskKey, restartAttempts, "Flash health audit failed.")
+		} finally {
+			this.workerHealthCheckInFlight = false
+		}
+	}
+
+	// 恢复动作を sendChain に直列化して実行する（#3）。実行直前に再検証し、
+	// dispose 済み・もう停滞していない・Worker が止まっている等なら何もしない（#6）。
+	private async runStallRecovery(
+		taskKey: string,
+		action: "restart" | "pause",
+		restartAttempts: number,
+		reason: string,
+	): Promise<void> {
+		const run = this.sendChain.then(
+			() => this.executeStallRecovery(taskKey, action, restartAttempts, reason),
+			() => this.executeStallRecovery(taskKey, action, restartAttempts, reason),
+		)
+		this.sendChain = run.catch(() => undefined)
+		await run
+	}
+
+	private async executeStallRecovery(
+		taskKey: string,
+		action: "restart" | "pause",
+		restartAttempts: number,
+		reason: string,
+	): Promise<void> {
+		if (this.disposed || !this.worker.isRunning()) {
+			return
+		}
+		// 直列化を待っている間に进展が再开していたら、もう介入しない（#3 竞态回避）。
+		const digest = this.bus.getDigest()
+		if (!HEALTH_AUDIT_STATUSES.has(digest.status)) {
+			return
+		}
+		if (Date.now() - this.progressSignatureAt < WORKER_HEALTH_CHECK_INTERVAL_MS) {
+			return
+		}
+		if (action === "pause" || restartAttempts >= MAX_STALL_RECOVERY_ATTEMPTS) {
+			await this.pauseStalledWorker(reason)
+			return
+		}
+		this.stallRecoveryAttempts.set(taskKey, restartAttempts + 1)
+		this.lastStallRestartAt.set(taskKey, Date.now())
+		await this.restartStalledWorker(reason)
+	}
+
+	private async recoverStalledWorkerWithoutUserReply(
+		taskKey: string,
+		restartAttempts: number,
+		reason: string,
+	): Promise<void> {
+		await this.runStallRecovery(
+			taskKey,
+			restartAttempts >= MAX_STALL_RECOVERY_ATTEMPTS ? "pause" : "restart",
+			restartAttempts,
+			reason,
+		)
+	}
+
+	private async restartStalledWorker(reason: string): Promise<void> {
+		const recoveryReason =
+			reason.trim() ||
+			"Worker health audit requested restart. Continue from the latest workspace state and avoid repeating the stalled operation."
+		KocodeTrace.warn("worker_health_restart", {
+			reason: recoveryReason,
+			taskId: this.bus.getDigest().taskId,
+			taskGoal: this.taskSpecManager.getTaskSpec()?.goal,
+		})
+		const controlResult = await this.worker.control({
+			action: "replan",
+			reason: recoveryReason,
+		})
+		if (controlResult.needsFreshStart || !this.worker.isRunning()) {
+			await this.restartWorkerIfTaskExists()
+		} else {
+			await this.emitTaskSpec(this.taskSpecManager.markActive())
+		}
+		// restart 直後を進展の起点とみなす。次回判定はここから再計測する（#2/#5）。
+		this.refreshProgressSignature()
+		this.progressSignatureAt = Date.now()
+	}
+
+	private async pauseStalledWorker(reason: string): Promise<void> {
+		const pauseReason =
+			reason.trim() || "Worker health audit decided to pause instead of retrying, to avoid trapping the user in a loop."
+		KocodeTrace.warn("worker_health_pause", {
+			reason: pauseReason,
+			taskId: this.bus.getDigest().taskId,
+			taskGoal: this.taskSpecManager.getTaskSpec()?.goal,
+		})
+		await this.worker.control({
+			action: "pause",
+			reason: pauseReason,
+		})
+		await this.emitTaskSpec(this.taskSpecManager.markPaused())
+	}
+
+	// 健康审计で使う安定キー。digest.taskId は starting 阶段に空になりやすいので、
+	// 先に永続的な taskSpec.id を使うことで「书き込み key」と「清理 key」を一致させる（#4）。
+	private workerHealthTaskKey(digest: WorkerDigest, taskSpecId?: string): string {
+		return taskSpecId ?? digest.taskId ?? "no-task"
+	}
+
+	// restart 後 STALL_RECOVERY_RESET_MS 以上「实质进展」が続いたら、立て直し成功とみなして
+	// リトライ計数をリセットする。これがないと正常稼働中の単発停滞で過早に pause する（#5）。
+	private maybeResetStallRecovery(taskKey: string, now: number): void {
+		const restartedAt = this.lastStallRestartAt.get(taskKey)
+		if (restartedAt === undefined) {
+			return
+		}
+		// 進度指纹が restart 後にも更新され、十分时间进んでいれば回復成功。
+		if (this.progressSignatureAt > restartedAt && now - restartedAt >= STALL_RECOVERY_RESET_MS) {
+			this.stallRecoveryAttempts.delete(taskKey)
+			this.lastStallRestartAt.delete(taskKey)
+			KocodeTrace.log("worker_health_recovery_reset", { taskKey })
+		}
+	}
+
+	private clearStallRecovery(taskId?: string): void {
+		// 终态：taskId と taskSpec.id 両方の key を掃除して、key 不一致による残留を防ぐ（#4）。
+		const taskSpecId = this.taskSpecManager.getTaskSpec()?.id
+		for (const key of [taskId, taskSpecId, "no-task"]) {
+			if (key) {
+				this.stallRecoveryAttempts.delete(key)
+				this.lastStallRestartAt.delete(key)
+			}
+		}
 	}
 }

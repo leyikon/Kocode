@@ -147,4 +147,37 @@ describe("FlashAgentSession", () => {
 
 		expect(result.approve).to.equal(true)
 	})
+
+	it("fallback marks plan_only when the user forbids code changes", async () => {
+		const flash = new FlashAgentSession(new MockFlashModelClient(new Error("model down")), new InMemoryKocodeMemoryStore())
+
+		const intent = await flash.classify("先帮我做个方案，先别改代码", "m1", digest, false)
+
+		expect(intent.type).to.equal("new_task")
+		if (intent.type === "new_task") {
+			expect(intent.decision.task.executionMode).to.equal("plan_only")
+		}
+	})
+
+	it("fallback marks plan_then_execute for planning requests", async () => {
+		const flash = new FlashAgentSession(new MockFlashModelClient(new Error("model down")), new InMemoryKocodeMemoryStore())
+
+		const intent = await flash.classify("帮我规划一下怎么做这个登录功能", "m1", digest, false)
+
+		expect(intent.type).to.equal("new_task")
+		if (intent.type === "new_task") {
+			expect(intent.decision.task.executionMode).to.equal("plan_then_execute")
+		}
+	})
+
+	it("fallback marks execute_directly for a plain implementation request", async () => {
+		const flash = new FlashAgentSession(new MockFlashModelClient(new Error("model down")), new InMemoryKocodeMemoryStore())
+
+		const intent = await flash.classify("帮我写一个登录页面", "m1", digest, false)
+
+		expect(intent.type).to.equal("new_task")
+		if (intent.type === "new_task") {
+			expect(intent.decision.task.executionMode).to.equal("execute_directly")
+		}
+	})
 })

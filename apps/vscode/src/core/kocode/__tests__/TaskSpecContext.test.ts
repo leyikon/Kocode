@@ -39,4 +39,35 @@ describe("TaskSpecManager and ContextSanitizer", () => {
 		expect(manager.getTaskSpec()?.constraints).to.deep.equal(["Do not change backend"])
 		expect(manager.getTaskSpec()?.pendingPatches.filter((patch) => patch.text === "Do not change backend")).to.have.length(1)
 	})
+
+	it("emits a PLAN ONLY worker prompt that forbids file changes", () => {
+		const manager = new TaskSpecManager()
+		const spec = manager.startFreshTask({ goal: "Plan a refactor", mode: "coding", executionMode: "plan_only" }, "m1")
+		const prompt = new ContextSanitizer().toWorkerPrompt(spec)
+
+		expect(prompt).to.contain("PLAN ONLY")
+		expect(prompt).to.contain("ファイルの編集・新規作成・書き込み系コマンドの実行は一切しないでください")
+		expect(prompt).to.contain("attempt_completion")
+	})
+
+	it("emits a PLAN THEN EXECUTE worker prompt that plans then implements", () => {
+		const manager = new TaskSpecManager()
+		const spec = manager.startFreshTask(
+			{ goal: "Build a feature", mode: "coding", executionMode: "plan_then_execute" },
+			"m1",
+		)
+		const prompt = new ContextSanitizer().toWorkerPrompt(spec)
+
+		expect(prompt).to.contain("PLAN THEN EXECUTE")
+		expect(prompt).to.contain("確認を待たずにそのまま実装")
+	})
+
+	it("defaults to EXECUTE mode when executionMode is unset", () => {
+		const manager = new TaskSpecManager()
+		const spec = manager.startFreshTask({ goal: "Just do it", mode: "coding" }, "m1")
+		const prompt = new ContextSanitizer().toWorkerPrompt(spec)
+
+		expect(spec.executionMode).to.equal("execute_directly")
+		expect(prompt).to.contain("Execution Mode: EXECUTE")
+	})
 })

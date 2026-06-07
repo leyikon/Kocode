@@ -1,7 +1,12 @@
 export type KocodeContextLayer = "social" | "task" | "revision" | "worker_memory" | "worker_digest"
+export type KocodeCharacterId = "koko" | "hime" | "mana"
 
 export type KocodeTaskMode = "coding" | "debugging" | "learning" | "slide_preview" | "quiz"
 export type KocodeTaskStatus = "draft" | "active" | "paused" | "completed" | "cancelled" | "failed"
+
+// 执行意图:决定 Worker 是只产计划、先计划再实现、还是直接实现。
+// 用于保证 Flash「说法」与系统「动作」一致(言行一致)。
+export type KocodeExecutionMode = "plan_only" | "plan_then_execute" | "execute_directly"
 
 export type TaskSpecPatchKind =
 	| "replace_goal"
@@ -26,6 +31,8 @@ export interface TaskSpec {
 	goal: string
 	mode: KocodeTaskMode
 	status: KocodeTaskStatus
+	// 执行意图。缺省视为 execute_directly(向后兼容旧 TaskSpec)。
+	executionMode?: KocodeExecutionMode
 	files: string[]
 	constraints: string[]
 	acceptedDecisions: string[]
@@ -74,6 +81,7 @@ export interface KocodeChatMessage {
 	author: KocodeMessageAuthor
 	text: string
 	ts: number
+	characterId?: KocodeCharacterId
 	images?: string[]
 	files?: string[]
 }
@@ -124,6 +132,7 @@ export type KocodeEvent =
 
 export interface KocodeUserMessage {
 	text: string
+	characterId?: KocodeCharacterId
 	images?: string[]
 	files?: string[]
 }

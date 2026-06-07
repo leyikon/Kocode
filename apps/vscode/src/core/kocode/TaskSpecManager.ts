@@ -1,8 +1,9 @@
-import type { KocodeTaskMode, TaskSpec, TaskSpecPatch } from "@shared/kocode"
+import type { KocodeExecutionMode, KocodeTaskMode, TaskSpec, TaskSpecPatch } from "@shared/kocode"
 
 export interface TaskSpecDraft {
 	goal: string
 	mode?: KocodeTaskMode | null
+	executionMode?: KocodeExecutionMode | null
 	files?: string[]
 	constraints?: string[]
 	acceptanceCriteria?: string[]
@@ -54,6 +55,7 @@ export class TaskSpecManager {
 			id: `${Date.now()}`,
 			goal,
 			mode: draft.mode ?? this.inferMode(goal),
+			executionMode: draft.executionMode ?? "execute_directly",
 			status: "draft",
 			files: [...files],
 			constraints: [...(draft.constraints ?? [])],
