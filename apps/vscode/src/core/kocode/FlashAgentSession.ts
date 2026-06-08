@@ -1,6 +1,7 @@
 import type {
 	KocodeCharacterId,
 	KocodeChatMessage,
+	KocodeMemoRef,
 	TaskSpec,
 	TaskSpecPatch,
 	WorkerControlRequest,
@@ -189,6 +190,7 @@ export class FlashAgentSession {
 		workerDigest: WorkerDigest,
 		taskSpec?: TaskSpec,
 		recentWorkerEvents: WorkerEvent[] = [],
+		memoRefs?: KocodeMemoRef[],
 	): Promise<string | undefined> {
 		await this.memoryReady
 		if (!this.modelClient.composeWorkerUpdate) {
@@ -210,6 +212,7 @@ export class FlashAgentSession {
 			recentSocialSummary: this.memory.socialSummary,
 			recentWorkerEvents,
 			reason,
+			memoRefs,
 		})
 		if (update.memoryUpdate.projectMemory) {
 			this.memory = KocodeMemoryMutators.setProjectSummary(this.memory, update.memoryUpdate.projectMemory)
@@ -356,13 +359,14 @@ export class FlashAgentSession {
 		}
 	}
 
-	toMessage(text: string): KocodeChatMessage {
+	toMessage(text: string, memoRefs?: KocodeMemoRef[]): KocodeChatMessage {
 		return {
 			id: `flash-${Date.now()}-${Math.random().toString(36).slice(2)}`,
 			author: "flash",
 			text,
 			ts: Date.now(),
 			characterId: this.characterId,
+			memoRefs,
 		}
 	}
 

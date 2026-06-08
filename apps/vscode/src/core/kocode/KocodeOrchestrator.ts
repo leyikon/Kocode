@@ -1,21 +1,25 @@
 import type {
-    KocodeChatMessage,
-    KocodeEvent,
-    KocodeSendResult,
-    KocodeSessionState,
-    KocodeUserMessage,
-    PendingRollbackConfirmation,
-    TaskSpecPatch,
-    WorkerControlRequest,
-    WorkerDigest,
-    WorkerEvent,
-    WorkerRollbackRestoreType,
+	KocodeChatMessage,
+	KocodeEvent,
+	KocodeMemoDocument,
+	KocodeMemoKind,
+	KocodeMemoRef,
+	KocodeSendResult,
+	KocodeSessionState,
+	KocodeUserMessage,
+	PendingRollbackConfirmation,
+	TaskSpecPatch,
+	WorkerControlRequest,
+	WorkerDigest,
+	WorkerEvent,
+	WorkerRollbackRestoreType,
 } from "@shared/kocode"
 import { Controller } from "@/core/controller"
 import { ClineWorkerAdapter } from "./ClineWorkerAdapter"
 import { FlashAgentSession } from "./FlashAgentSession"
 import type { FlashWorkerUpdateReason } from "./FlashModelClient"
 import { FileKocodeMemoryStore } from "./KocodeMemoryStore"
+import { FileKocodeMemoStore, type KocodeMemoPersistence, trimMemoList } from "./KocodeMemoStore"
 import { KocodeTrace } from "./KocodeTrace"
 import { type TaskSpecDraft, TaskSpecManager } from "./TaskSpecManager"
 import { type KocodeEventListener, WorkerEventBus } from "./WorkerEventBus"
@@ -86,9 +90,32 @@ function isCancellation(text: string): boolean {
 	return isRollbackCancellation(text)
 }
 
+function extractMarkdownTitle(markdown: string): string | undefined {
+	const heading = markdown.match(/^#\s+(.+)$/m)?.[1]?.trim()
+	return heading || undefined
+}
+
+function defaultMemoTitle(kind: KocodeMemoKind, taskGoal?: string): string {
+	const prefix = kind === "plan_report" ? "計画レポート" : "完了レポート"
+	const goal = taskGoal?.trim()
+	if (!goal) {
+		return prefix
+	}
+	return `${prefix}: ${goal.length > 48 ? `${goal.slice(0, 48)}...` : goal}`
+}
+
+function memoToRef(memo: KocodeMemoDocument): KocodeMemoRef {
+	return {
+		id: memo.id,
+		title: memo.title,
+		kind: memo.kind,
+	}
+}
+
 export class KocodeOrchestrator {
 	private readonly bus = new WorkerEventBus()
 	private readonly flash: FlashAgentSession
+	private readonly memoStore: KocodeMemoPersistence
 	private readonly taskSpecManager = new TaskSpecManager()
 	private readonly worker: ClineWorkerAdapter
 	private readonly messages: KocodeChatMessage[] = []
@@ -109,16 +136,30 @@ export class KocodeOrchestrator {
 	private progressSignature = ""
 	private progressSignatureAt = Date.now()
 	// 各 key の直近 restart 时刻。restart 後に十分进展が続いたら計数をリセットする（#5）。
-	private readonly lastStallRestartAt = new Map<string, number>
+	private readonly lastStallRestartAt = new Map<string, number>()
 	private pendingRollback?: PendingRollbackConfirmation
 	private pendingTaskSwitch?: PendingTaskSwitch
+	private memos: KocodeMemoDocument[] = []
+	private memoReadyRef?: KocodeMemoRef
+	private selectedMemoId?: string
+	private readonly memosReady: Promise<void>
 	// 串行化用户消息处理，避免并发 sendUserMessage 交错改写 TaskSpec 状态（#1 并发场景）。
 	private sendChain: Promise<unknown> = Promise.resolve()
 	private disposed = false
 
-	constructor(controller: Controller, flash?: FlashAgentSession) {
+	constructor(controller: Controller, flash?: FlashAgentSession, memoStore?: KocodeMemoPersistence) {
 		const cwd = controller.getWorkspaceManager()?.getPrimaryRoot()?.path
 		this.flash = flash ?? new FlashAgentSession(undefined, new FileKocodeMemoryStore(cwd))
+		this.memoStore = memoStore ?? new FileKocodeMemoStore(cwd)
+		this.memosReady = this.memoStore
+			.load()
+			.then((memos) => {
+				this.memos = trimMemoList(memos)
+				this.selectedMemoId = this.memos.at(-1)?.id
+			})
+			.catch((error) => {
+				KocodeTrace.error("kocode_memo_load_failed", error)
+			})
 		this.worker = new ClineWorkerAdapter(controller, this.bus)
 		// Worker が承認待ちで止まったら、Flash Agent に許可/拒否を判断させて自動応答する。
 		this.worker.setApprovalResolver((request) => this.resolveWorkerApproval(request))
@@ -158,6 +199,10 @@ export class KocodeOrchestrator {
 		return this.bus.subscribe(listener)
 	}
 
+	async ensureReady(): Promise<void> {
+		await this.memosReady
+	}
+
 	getSession(): KocodeSessionState {
 		return {
 			messages: [...this.messages],
@@ -165,7 +210,19 @@ export class KocodeOrchestrator {
 			workerDigest: this.bus.getDigest(),
 			workerEvents: this.bus.getWorkerEvents(),
 			pendingRollback: this.pendingRollback,
+			memos: [...this.memos],
+			selectedMemoId: this.selectedMemoId,
 		}
+	}
+
+	async selectMemo(memoId?: string): Promise<void> {
+		await this.ensureReady()
+		if (memoId && this.memos.some((memo) => memo.id === memoId)) {
+			this.selectedMemoId = memoId
+		} else if (!this.selectedMemoId) {
+			this.selectedMemoId = this.memos.at(-1)?.id
+		}
+		await this.bus.emit({ type: "memo_selected", memoId: this.selectedMemoId })
 	}
 
 	async sendUserMessage(request: KocodeUserMessage): Promise<KocodeSendResult> {
@@ -482,8 +539,8 @@ export class KocodeOrchestrator {
 		}
 	}
 
-	private async sayFlash(text: string, options: { workerNotice?: boolean } = {}): Promise<void> {
-		const message = this.flash.toMessage(text)
+	private async sayFlash(text: string, options: { workerNotice?: boolean; memoRefs?: KocodeMemoRef[] } = {}): Promise<void> {
+		const message = this.flash.toMessage(text, options.memoRefs)
 		KocodeTrace.log("flash_message", { messageId: message.id, text })
 		this.messages.push(message)
 		if (options.workerNotice) {
@@ -675,7 +732,10 @@ export class KocodeOrchestrator {
 			case "completed":
 				this.clearStallRecovery(digest.taskId)
 				await this.emitTaskSpec(this.taskSpecManager.markCompleted())
-				await this.scheduleWorkerUpdate("completed", { critical: true })
+				await this.scheduleWorkerUpdate("completed", {
+					critical: true,
+					memoRefs: this.memoReadyRef ? [this.memoReadyRef] : undefined,
+				})
 				break
 			case "failed":
 				this.clearStallRecovery(digest.taskId)
@@ -717,12 +777,45 @@ export class KocodeOrchestrator {
 				this.scheduleProgressDebounced()
 				break
 			case "completed":
-				await this.scheduleWorkerUpdate("completed", { critical: true })
+				this.memoReadyRef = await this.createMemoFromCompletedEvent(event)
 				break
 			case "cancelled":
 				await this.scheduleWorkerUpdate("cancelled", { critical: true })
 				break
 		}
+	}
+
+	private async createMemoFromCompletedEvent(event: WorkerEvent): Promise<KocodeMemoRef | undefined> {
+		const markdown = event.detail?.trim()
+		if (!markdown) {
+			return undefined
+		}
+		await this.ensureReady()
+		const taskSpec = this.taskSpecManager.getTaskSpec()
+		const kind: KocodeMemoKind = taskSpec?.executionMode === "plan_only" ? "plan_report" : "completion_report"
+		const taskId = taskSpec?.id ?? this.bus.getDigest().taskId ?? "unknown-task"
+		const memo: KocodeMemoDocument = {
+			id: `memo-${event.ts}-${Math.random().toString(36).slice(2)}`,
+			taskId,
+			kind,
+			title: extractMarkdownTitle(markdown) ?? defaultMemoTitle(kind, taskSpec?.goal),
+			markdown,
+			createdAt: event.ts,
+			taskGoal: taskSpec?.goal,
+		}
+		this.memos = trimMemoList([...this.memos, memo])
+		this.selectedMemoId = memo.id
+		await this.memoStore.save(this.memos)
+		await this.bus.emit({ type: "memo_ready", memo })
+		await this.bus.emit({ type: "memo_selected", memoId: memo.id })
+		KocodeTrace.log("memo_created", {
+			memoId: memo.id,
+			kind: memo.kind,
+			taskId: memo.taskId,
+			title: memo.title,
+			markdownLength: memo.markdown.length,
+		})
+		return memoToRef(memo)
 	}
 
 	private scheduleProgressDebounced(): void {
@@ -740,7 +833,7 @@ export class KocodeOrchestrator {
 
 	private async scheduleWorkerUpdate(
 		reason: FlashWorkerUpdateReason,
-		options: { critical?: boolean; force?: boolean; suppressIfRecent?: boolean } = {},
+		options: { critical?: boolean; force?: boolean; suppressIfRecent?: boolean; memoRefs?: KocodeMemoRef[] } = {},
 	): Promise<void> {
 		const digest = this.bus.getDigest()
 		const now = Date.now()
@@ -799,9 +892,16 @@ export class KocodeOrchestrator {
 				digest,
 				this.taskSpecManager.getTaskSpec(),
 				this.bus.getWorkerEvents().slice(-8),
+				options.memoRefs ?? (reason === "completed" && this.memoReadyRef ? [this.memoReadyRef] : undefined),
 			)
 			if (reply) {
-				await this.sayFlash(reply, { workerNotice: true })
+				await this.sayFlash(reply, {
+					workerNotice: true,
+					memoRefs: options.memoRefs ?? (reason === "completed" && this.memoReadyRef ? [this.memoReadyRef] : undefined),
+				})
+				if (reason === "completed") {
+					this.memoReadyRef = undefined
+				}
 				this.criticalWorkerUpdateRetries.delete(key)
 				this.removeQueuedCritical(reason)
 				if (terminal) {
@@ -1020,11 +1120,7 @@ export class KocodeOrchestrator {
 		await this.restartStalledWorker(reason)
 	}
 
-	private async recoverStalledWorkerWithoutUserReply(
-		taskKey: string,
-		restartAttempts: number,
-		reason: string,
-	): Promise<void> {
+	private async recoverStalledWorkerWithoutUserReply(taskKey: string, restartAttempts: number, reason: string): Promise<void> {
 		await this.runStallRecovery(
 			taskKey,
 			restartAttempts >= MAX_STALL_RECOVERY_ATTEMPTS ? "pause" : "restart",

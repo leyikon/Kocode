@@ -1,4 +1,11 @@
-import type { KocodeEvent, KocodeSendResult, KocodeSessionState, KocodeUserMessage, WorkerControlRequest } from "@shared/kocode"
+import type {
+	KocodeEvent,
+	KocodeOpenWorkbenchRequest,
+	KocodeSendResult,
+	KocodeSessionState,
+	KocodeUserMessage,
+	WorkerControlRequest,
+} from "@shared/kocode"
 import { Empty, EmptyRequest } from "@shared/proto/cline/common"
 import { Controller } from "@/core/controller"
 import { getRequestRegistry, type StreamingResponseHandler } from "@/core/controller/grpc-handler"
@@ -26,10 +33,13 @@ export async function workerControl(controller: Controller, request: WorkerContr
 }
 
 export async function getKocodeSession(controller: Controller, _request: EmptyRequest): Promise<KocodeSessionState> {
-	return getOrchestrator(controller).getSession()
+	const orchestrator = getOrchestrator(controller)
+	await orchestrator.ensureReady()
+	return orchestrator.getSession()
 }
 
-export async function openWorkbench(_controller: Controller, _request: EmptyRequest): Promise<Empty> {
+export async function openWorkbench(controller: Controller, request: KocodeOpenWorkbenchRequest): Promise<Empty> {
+	await getOrchestrator(controller).selectMemo(request.memoId)
 	const provider = WebviewProvider.getInstance() as WebviewProvider & {
 		openKocodeWorkbenchPanel?: () => Promise<void>
 	}
@@ -52,6 +62,7 @@ export async function subscribeToKocodeEvents(
 		getRequestRegistry().registerRequest(requestId, unsubscribe, { type: "kocode_events_subscription" }, responseStream)
 	}
 
+	await orchestrator.ensureReady()
 	const session = orchestrator.getSession()
 	await responseStream(
 		{

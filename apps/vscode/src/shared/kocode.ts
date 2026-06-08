@@ -76,6 +76,14 @@ export interface WorkerControlRequest {
 
 export type KocodeMessageAuthor = "user" | "flash"
 
+export type KocodeMemoKind = "plan_report" | "completion_report"
+
+export interface KocodeMemoRef {
+	id: string
+	title: string
+	kind: KocodeMemoKind
+}
+
 export interface KocodeChatMessage {
 	id: string
 	author: KocodeMessageAuthor
@@ -84,6 +92,7 @@ export interface KocodeChatMessage {
 	characterId?: KocodeCharacterId
 	images?: string[]
 	files?: string[]
+	memoRefs?: KocodeMemoRef[]
 }
 
 export interface WorkerDigest {
@@ -122,6 +131,17 @@ export type LearningArtifact =
 	| { type: "slide_preview"; title: string; slides: SlidePreviewPage[] }
 	| { type: "practice_quiz"; title: string; questions: PracticeQuestion[] }
 
+export interface KocodeMemoDocument {
+	id: string
+	taskId: string
+	kind: KocodeMemoKind
+	title: string
+	markdown: string
+	createdAt: number
+	sourceMessageId?: string
+	taskGoal?: string
+}
+
 export type KocodeEvent =
 	| { type: "flash_message"; message: KocodeChatMessage }
 	| { type: "user_message"; message: KocodeChatMessage }
@@ -129,6 +149,8 @@ export type KocodeEvent =
 	| { type: "worker_detail"; event: WorkerEvent }
 	| { type: "task_spec_updated"; taskSpec: TaskSpec }
 	| { type: "artifact_ready"; artifact: LearningArtifact }
+	| { type: "memo_ready"; memo: KocodeMemoDocument }
+	| { type: "memo_selected"; memoId?: string }
 
 export interface KocodeUserMessage {
 	text: string
@@ -150,4 +172,10 @@ export interface KocodeSessionState {
 	workerDigest: WorkerDigest
 	workerEvents: WorkerEvent[]
 	pendingRollback?: PendingRollbackConfirmation
+	memos: KocodeMemoDocument[]
+	selectedMemoId?: string
+}
+
+export interface KocodeOpenWorkbenchRequest {
+	memoId?: string
 }

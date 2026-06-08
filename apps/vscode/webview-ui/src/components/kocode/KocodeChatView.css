@@ -52,9 +52,11 @@
 .kocode-view.theme-mana {
 	background:
 		linear-gradient(rgba(77, 130, 192, 0.055) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(77, 130, 192, 0.055) 1px, transparent 1px),
-		linear-gradient(180deg, #fbfdff, #f3f8ff);
-	background-size: 22px 22px, 22px 22px, auto;
+		linear-gradient(90deg, rgba(77, 130, 192, 0.055) 1px, transparent 1px), linear-gradient(180deg, #fbfdff, #f3f8ff);
+	background-size:
+		22px 22px,
+		22px 22px,
+		auto;
 }
 
 .kocode-topbar {
@@ -706,4 +708,65 @@
 	color: #559d8e;
 	cursor: pointer;
 	font-size: 12px;
+}
+
+.kocode-memo-file-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 9px;
+}
+
+.kocode-memo-file-card {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	min-width: 0;
+	padding: 8px 9px;
+	border: 1px solid color-mix(in srgb, var(--kocode-accent) 22%, #d8d8d8);
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--kocode-accent) 6%, #ffffff);
+	color: var(--kocode-text);
+	cursor: pointer;
+	text-align: left;
+}
+
+.kocode-memo-file-card:hover {
+	border-color: color-mix(in srgb, var(--kocode-accent) 46%, #d8d8d8);
+	background: color-mix(in srgb, var(--kocode-accent) 10%, #ffffff);
+}
+
+.kocode-memo-file-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	flex: 0 0 auto;
+	border-radius: 6px;
+	background: var(--kocode-accent);
+	color: white;
+}
+
+.kocode-memo-file-main {
+	display: flex;
+	min-width: 0;
+	flex: 1;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.kocode-memo-file-main strong {
+	overflow: hidden;
+	font-size: 12px;
+	font-weight: 750;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.kocode-memo-file-main small {
+	color: var(--kocode-muted);
+	font-size: 10px;
+	font-weight: 650;
 }

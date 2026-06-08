@@ -1,4 +1,4 @@
-import type { TaskSpec, TaskSpecPatchKind, WorkerControlAction, WorkerDigest, WorkerEvent } from "@shared/kocode"
+import type { KocodeMemoRef, TaskSpec, TaskSpecPatchKind, WorkerControlAction, WorkerDigest, WorkerEvent } from "@shared/kocode"
 import { z } from "zod"
 import { ClineEnv } from "@/config"
 import { fetch } from "@/shared/net"
@@ -179,6 +179,7 @@ export interface FlashWorkerUpdateContext {
 	recentSocialSummary: string
 	recentWorkerEvents: WorkerEvent[]
 	reason: FlashWorkerUpdateReason
+	memoRefs?: KocodeMemoRef[]
 }
 
 export interface FlashWorkerHealthAuditContext {
@@ -425,6 +426,8 @@ Worker Update Context の Character Profile に書かれたキャラクターと
 - reason が progress の時は、前回とほぼ同じ内容なら shouldNotify=false。
 - progress で通知する場合は、今なにをしているかを短く言い、待つ不安を減らしてください。
 - completed の時は、短い完了まとめ + 次に見るとよいことを1つだけ伝えてください。
+- completed で Memo がある時は、下に表示される報告カードを見るよう短く案内してください。
+- Memo の本文は別の表示領域に出ます。reply に長い報告本文、Markdown、箇条書きの詳細を貼らないでください。
 - failed の時は、責めずに、次に一緒に立て直せる雰囲気にしてください。
 
 出力は必ず JSON のみです。
@@ -566,6 +569,9 @@ function buildWorkerUpdateContext(context: FlashWorkerUpdateContext): string {
 		"",
 		"## Worker Digest",
 		JSON.stringify(context.workerDigest),
+		"",
+		"## Memo Cards",
+		JSON.stringify(context.memoRefs ?? []),
 		"",
 		"## Recent Worker Events",
 		JSON.stringify(context.recentWorkerEvents.slice(-8)),

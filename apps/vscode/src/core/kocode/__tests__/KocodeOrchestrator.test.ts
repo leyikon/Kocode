@@ -1,8 +1,11 @@
+import { convertClineMessageToProto } from "@shared/proto-conversions/cline-message"
 import { expect } from "chai"
 import { describe, it } from "mocha"
+import { sendPartialMessageEvent } from "@/core/controller/ui/subscribeToPartialMessage"
 import { FlashAgentSession } from "../FlashAgentSession"
 import type { FlashModelDecision } from "../FlashModelClient"
 import { InMemoryKocodeMemoryStore } from "../KocodeMemoryStore"
+import { InMemoryKocodeMemoStore } from "../KocodeMemoStore"
 import { KocodeOrchestrator } from "../KocodeOrchestrator"
 
 const decision = (overrides: Partial<FlashModelDecision>): FlashModelDecision => ({
@@ -15,11 +18,23 @@ const decision = (overrides: Partial<FlashModelDecision>): FlashModelDecision =>
 	...overrides,
 })
 
+async function waitFor(predicate: () => boolean, timeoutMs = 1_000): Promise<void> {
+	const startedAt = Date.now()
+	while (!predicate()) {
+		if (Date.now() - startedAt > timeoutMs) {
+			return
+		}
+		await new Promise((resolve) => setTimeout(resolve, 10))
+	}
+}
+
 class QueueFlashModelClient {
 	private readonly decisions: FlashModelDecision[]
+	private readonly workerUpdates: string[]
 
-	constructor(decisions: FlashModelDecision[]) {
+	constructor(decisions: FlashModelDecision[], workerUpdates: string[] = []) {
 		this.decisions = decisions
+		this.workerUpdates = workerUpdates
 	}
 
 	async decide(): Promise<FlashModelDecision> {
@@ -28,6 +43,19 @@ class QueueFlashModelClient {
 			throw new Error("No mock decision queued")
 		}
 		return next
+	}
+
+	async composeWorkerUpdate(): Promise<{
+		shouldNotify: boolean
+		reply: string
+		memoryUpdate: { projectMemory: null; socialMemory: null }
+	}> {
+		const reply = this.workerUpdates.shift()
+		return {
+			shouldNotify: !!reply,
+			reply: reply ?? "",
+			memoryUpdate: { projectMemory: null, socialMemory: null },
+		}
 	}
 }
 
@@ -147,6 +175,128 @@ describe("KocodeOrchestrator", () => {
 		expect(result.workerStarted).to.equal(true)
 		expect(initCount).to.equal(1)
 		expect(orchestrator.getSession().taskSpec?.acceptanceCriteria).to.include("計画だけを出す")
+		orchestrator.dispose()
+	})
+
+	it("creates a persisted completion memo and attaches a memo file ref to the Flash message", async () => {
+		let initCount = 0
+		const completionMarkdown = "# Final Report\n\nThis is the full long completion report."
+		const controller = {
+			task: undefined,
+			initTask: async () => {
+				initCount += 1
+				controller.task = { taskId: `task-${initCount}` }
+				return `task-${initCount}`
+			},
+			cancelTask: async () => undefined,
+			getWorkspaceManager: () => undefined,
+			ensureWorkspaceManager: async () => undefined,
+		} as any
+		const memoStore = new InMemoryKocodeMemoStore()
+		const flash = new FlashAgentSession(
+			new QueueFlashModelClient(
+				[
+					decision({
+						intent: "new_task",
+						reply: "作業を始めるにゃ。",
+						task: { goal: "Build reports", mode: "coding", files: [], constraints: [], acceptanceCriteria: [] },
+					}),
+				],
+				["できたよ。下のレポートを見てね。"],
+			),
+			new InMemoryKocodeMemoryStore(),
+		)
+		const orchestrator = new KocodeOrchestrator(controller, flash, memoStore)
+
+		await orchestrator.sendUserMessage({ text: "レポート機能を作って" })
+		await waitFor(() => orchestrator.getSession().workerDigest.status === "running")
+		await sendPartialMessageEvent(
+			convertClineMessageToProto({
+				type: "say",
+				say: "completion_result",
+				text: completionMarkdown,
+				partial: false,
+				ts: 100,
+			} as any),
+		)
+		await waitFor(() => orchestrator.getSession().memos.length === 1)
+		await waitFor(() => orchestrator.getSession().messages.some((message) => !!message.memoRefs?.length))
+
+		const session = orchestrator.getSession()
+		expect(session.memos).to.have.length(1)
+		expect(session.memos[0].kind).to.equal("completion_report")
+		expect(session.memos[0].title).to.equal("Final Report")
+		expect(session.memos[0].markdown).to.equal(completionMarkdown)
+		const flashMessage = session.messages.at(-1)
+		expect(flashMessage?.text).to.equal("できたよ。下のレポートを見てね。")
+		expect(flashMessage?.text).not.to.contain("full long completion report")
+		expect(flashMessage?.memoRefs?.[0]?.id).to.equal(session.memos[0].id)
+		const memoId = session.memos[0].id
+		orchestrator.dispose()
+
+		const restored = new KocodeOrchestrator(
+			controller,
+			new FlashAgentSession(new QueueFlashModelClient([]), new InMemoryKocodeMemoryStore()),
+			memoStore,
+		)
+		await restored.ensureReady()
+		expect(restored.getSession().memos[0].id).to.equal(memoId)
+		await restored.selectMemo(memoId)
+		expect(restored.getSession().selectedMemoId).to.equal(memoId)
+		restored.dispose()
+	})
+
+	it("classifies plan_only completion output as a plan report memo", async () => {
+		const controller = {
+			task: undefined,
+			initTask: async () => {
+				controller.task = { taskId: "task-plan" }
+				return "task-plan"
+			},
+			cancelTask: async () => undefined,
+			getWorkspaceManager: () => undefined,
+			ensureWorkspaceManager: async () => undefined,
+		} as any
+		const flash = new FlashAgentSession(
+			new QueueFlashModelClient(
+				[
+					decision({
+						intent: "new_task",
+						reply: "作り方を整理するにゃ。",
+						task: {
+							goal: "Plan the work",
+							mode: "coding",
+							executionMode: "plan_only",
+							files: [],
+							constraints: [],
+							acceptanceCriteria: [],
+						},
+					}),
+				],
+				["計画をまとめたよ。"],
+			),
+			new InMemoryKocodeMemoryStore(),
+		)
+		const orchestrator = new KocodeOrchestrator(controller, flash, new InMemoryKocodeMemoStore())
+
+		await orchestrator.sendUserMessage({ text: "計画だけ出して" })
+		await waitFor(() => orchestrator.getSession().workerDigest.status === "running")
+		await sendPartialMessageEvent(
+			convertClineMessageToProto({
+				type: "say",
+				say: "completion_result",
+				text: "# Implementation Plan\n\nDo not edit files yet.",
+				partial: false,
+				ts: 200,
+			} as any),
+		)
+		await waitFor(() => orchestrator.getSession().memos.length === 1)
+		await waitFor(() => orchestrator.getSession().messages.some((message) => !!message.memoRefs?.length))
+
+		const session = orchestrator.getSession()
+		expect(session.memos).to.have.length(1)
+		expect(session.memos[0].kind).to.equal("plan_report")
+		expect(session.messages.at(-1)?.memoRefs?.[0]?.kind).to.equal("plan_report")
 		orchestrator.dispose()
 	})
 
@@ -354,4 +504,3 @@ describe("KocodeOrchestrator", () => {
 		orchestrator.dispose()
 	})
 })
-

@@ -1,6 +1,16 @@
-import type { KocodeCharacterId, KocodeChatMessage, KocodeEvent } from "@shared/kocode"
+import type { KocodeCharacterId, KocodeChatMessage, KocodeEvent, KocodeMemoRef } from "@shared/kocode"
 import { BooleanRequest, EmptyRequest } from "@shared/proto/cline/common"
-import { BookOpenIcon, CheckIcon, ChevronLeftIcon, MenuIcon, PlusIcon, SearchIcon, SendIcon, SettingsIcon } from "lucide-react"
+import {
+	BookOpenIcon,
+	CheckIcon,
+	ChevronLeftIcon,
+	FileTextIcon,
+	MenuIcon,
+	PlusIcon,
+	SearchIcon,
+	SendIcon,
+	SettingsIcon,
+} from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useMount } from "react-use"
 import { Virtuoso } from "react-virtuoso"
@@ -112,7 +122,11 @@ const KocodeHeader = ({
 			<span aria-hidden>♡</span>
 			<div>
 				<strong>{isContactsView ? "連絡先" : "Kocode / ココーデ"}</strong>
-				{!isContactsView && <small>{character.name}・{character.tag}</small>}
+				{!isContactsView && (
+					<small>
+						{character.name}・{character.tag}
+					</small>
+				)}
 			</div>
 		</div>
 		<button aria-label="作業メモを開く" className="kocode-icon-button" onClick={onOpenWorkbench} type="button">
@@ -171,8 +185,22 @@ const UserBubble = ({ children, timestamp }: { children: React.ReactNode; timest
 	</div>
 )
 
+const memoKindLabel = (kind: KocodeMemoRef["kind"]) => (kind === "plan_report" ? "計画" : "完了")
+
+const MemoFileCard = ({ memo, onOpen }: { memo: KocodeMemoRef; onOpen: (memoId: string) => void }) => (
+	<button className="kocode-memo-file-card" onClick={() => onOpen(memo.id)} type="button">
+		<span className="kocode-memo-file-icon">
+			<FileTextIcon size={17} />
+		</span>
+		<span className="kocode-memo-file-main">
+			<strong>{memo.title}</strong>
+			<small>{memoKindLabel(memo.kind)}レポート</small>
+		</span>
+	</button>
+)
+
 const KocodeTypingBubble = ({ character, timestamp }: { character: KocodeCharacter; timestamp: number }) => (
-	<div className="kocode-row kocode-row-assistant kocode-typing-row" aria-label={`${character.name}が入力中`}>
+	<div aria-label={`${character.name}が入力中`} className="kocode-row kocode-row-assistant kocode-typing-row">
 		<Avatar character={character} />
 		<div className="kocode-bubble-wrap">
 			<div className="kocode-bubble kocode-assistant-bubble kocode-typing-bubble">
@@ -203,7 +231,15 @@ const KocodeEmptyChat = ({
 	</div>
 )
 
-const KocodeChatMessageItem = ({ fallbackCharacter, message }: { fallbackCharacter: KocodeCharacter; message: KocodeChatMessage }) => {
+const KocodeChatMessageItem = ({
+	fallbackCharacter,
+	message,
+	onOpenMemo,
+}: {
+	fallbackCharacter: KocodeCharacter
+	message: KocodeChatMessage
+	onOpenMemo: (memoId: string) => void
+}) => {
 	if (message.author === "user") {
 		return <UserBubble timestamp={message.ts}>{message.text}</UserBubble>
 	}
@@ -213,6 +249,13 @@ const KocodeChatMessageItem = ({ fallbackCharacter, message }: { fallbackCharact
 	return (
 		<AssistantBubble character={messageCharacter} timestamp={message.ts}>
 			<MarkdownRow markdown={message.text} />
+			{message.memoRefs && message.memoRefs.length > 0 && (
+				<div className="kocode-memo-file-list">
+					{message.memoRefs.map((memo) => (
+						<MemoFileCard key={memo.id} memo={memo} onOpen={onOpenMemo} />
+					))}
+				</div>
+			)}
 		</AssistantBubble>
 	)
 }
@@ -338,6 +381,10 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 		[handleKocodeSendMessage, messageHandlers],
 	)
 
+	const openMemo = useCallback((memoId: string) => {
+		void KocodeServiceClient.openWorkbench({ memoId })
+	}, [])
+
 	useEffect(() => {
 		KocodeServiceClient.getKocodeSession(EmptyRequest.create({}))
 			.then((session) => {
@@ -369,7 +416,9 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 				}
 				if (event.type === "worker_status") {
 					const shouldWait =
-						event.digest.status === "starting" || event.digest.status === "running" || event.digest.status === "waiting"
+						event.digest.status === "starting" ||
+						event.digest.status === "running" ||
+						event.digest.status === "waiting"
 					setIsWorkerWaiting((wasWaiting) => {
 						if (shouldWait && !wasWaiting) {
 							setWaitingSince(Date.now())
@@ -454,11 +503,19 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 									className="kocode-thread scrollable"
 									components={{
 										Footer: () =>
-											showWaitingBubble ? <KocodeTypingBubble character={waitingCharacter} timestamp={waitingSince} /> : null,
+											showWaitingBubble ? (
+												<KocodeTypingBubble character={waitingCharacter} timestamp={waitingSince} />
+											) : null,
 									}}
 									data={kocodeMessages}
 									initialTopMostItemIndex={kocodeMessages.length - 1}
-									itemContent={(_, item) => <KocodeChatMessageItem fallbackCharacter={selectedCharacter} message={item} />}
+									itemContent={(_, item) => (
+										<KocodeChatMessageItem
+											fallbackCharacter={selectedCharacter}
+											message={item}
+											onOpenMemo={openMemo}
+										/>
+									)}
 									key="kocode-thread"
 									ref={scrollBehavior.virtuosoRef}
 								/>
@@ -500,7 +557,11 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 							aria-label="送信"
 							className="kocode-compose-action kocode-send-ornament"
 							onClick={() =>
-								void handleKocodeSendMessage(chatState.inputValue, chatState.selectedImages, chatState.selectedFiles)
+								void handleKocodeSendMessage(
+									chatState.inputValue,
+									chatState.selectedImages,
+									chatState.selectedFiles,
+								)
 							}
 							type="button">
 							<SendIcon size={18} />

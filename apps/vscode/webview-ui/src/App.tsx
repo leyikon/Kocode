@@ -71,7 +71,11 @@ const AppContent = () => {
 	}, [])
 
 	if (webviewMode === "kocode-workbench") {
-		return <KocodeWorkbenchView />
+		return (
+			<div className="flex h-full min-h-0 w-full overflow-hidden">
+				<KocodeWorkbenchView />
+			</div>
+		)
 	}
 
 	if (!didHydrateState) {
