@@ -27,6 +27,10 @@ export async function sendUserMessage(controller: Controller, request: KocodeUse
 	return getOrchestrator(controller).sendUserMessage(request)
 }
 
+export async function answerWorkerAsk(controller: Controller, request: KocodeUserMessage): Promise<KocodeSendResult> {
+	return getOrchestrator(controller).answerWorkerAsk(request.text)
+}
+
 export async function workerControl(controller: Controller, request: WorkerControlRequest): Promise<Empty> {
 	await getOrchestrator(controller).workerControl(request)
 	return Empty.create()
@@ -75,6 +79,7 @@ export async function subscribeToKocodeEvents(
 
 export const kocodeServiceHandlers = {
 	sendUserMessage,
+	answerWorkerAsk,
 	workerControl,
 	subscribeToKocodeEvents,
 	getKocodeSession,

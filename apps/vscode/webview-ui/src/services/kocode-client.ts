@@ -22,6 +22,10 @@ export class KocodeServiceClient extends ProtoBusClient {
 		return KocodeServiceClient.makeUnaryRequest("sendUserMessage", request, encodeIdentity, decodeKocodeSendResult)
 	}
 
+	static async answerWorkerAsk(request: KocodeUserMessage): Promise<KocodeSendResult> {
+		return KocodeServiceClient.makeUnaryRequest("answerWorkerAsk", request, encodeIdentity, decodeKocodeSendResult)
+	}
+
 	static async workerControl(request: WorkerControlRequest): Promise<Record<string, never>> {
 		return KocodeServiceClient.makeUnaryRequest("workerControl", request, encodeIdentity, decodeEmpty)
 	}

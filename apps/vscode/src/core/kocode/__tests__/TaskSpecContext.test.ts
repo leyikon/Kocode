@@ -52,10 +52,7 @@ describe("TaskSpecManager and ContextSanitizer", () => {
 
 	it("emits a PLAN THEN EXECUTE worker prompt that plans then implements", () => {
 		const manager = new TaskSpecManager()
-		const spec = manager.startFreshTask(
-			{ goal: "Build a feature", mode: "coding", executionMode: "plan_then_execute" },
-			"m1",
-		)
+		const spec = manager.startFreshTask({ goal: "Build a feature", mode: "coding", executionMode: "plan_then_execute" }, "m1")
 		const prompt = new ContextSanitizer().toWorkerPrompt(spec)
 
 		expect(prompt).to.contain("PLAN THEN EXECUTE")
@@ -69,5 +66,22 @@ describe("TaskSpecManager and ContextSanitizer", () => {
 
 		expect(spec.executionMode).to.equal("execute_directly")
 		expect(prompt).to.contain("Execution Mode: EXECUTE")
+	})
+
+	it("emits a SURVEY PLAN worker prompt that asks one question at a time and never edits files", () => {
+		const manager = new TaskSpecManager()
+		const spec = manager.startFreshTask({ goal: "Build a whole app", mode: "coding", executionMode: "survey_plan" }, "m1")
+		const prompt = new ContextSanitizer().toWorkerPrompt(spec)
+
+		expect(prompt).to.contain("SURVEY PLAN")
+		// 一次只问一题:必须用 ask_followup_question 单问，且禁止 plan_mode_respond 列举。
+		expect(prompt).to.contain("ask_followup_question")
+		expect(prompt).to.contain("ちょうど 1 問")
+		expect(prompt).to.contain("plan_mode_respond")
+		// 只读不写,与 plan_only 一致。
+		expect(prompt).to.contain("ファイルの編集・新規作成・書き込み系コマンドの実行は一切しないでください")
+		// 先做理解度自评 + 最后 attempt_completion 出报告。
+		expect(prompt).to.contain("理解度の自己評価")
+		expect(prompt).to.contain("attempt_completion")
 	})
 })

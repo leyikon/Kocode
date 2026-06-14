@@ -48,10 +48,11 @@ const MAX_ROLLBACK_STEPS = 3
 
 // Worker が承認待ちになった時に Flash Agent へ判断を委ねるコールバック。
 // true=許可（yesButtonClicked）、false=拒否（noButtonClicked）。
-export type WorkerApprovalResolver = (request: {
-	askType: string
-	askText: string
-}) => Promise<boolean>
+export type WorkerApprovalResolver = (request: { askType: string; askText: string }) => Promise<boolean>
+
+// survey_plan モードで Worker が ask_followup_question を出した時に呼ばれる。
+// 通常の followup（worker_detail）イベントは発行せず、こちらに振り分ける。
+export type SurveyQuestionHandler = (question: { ts: number; question: string; options: string[] }) => Promise<void> | void
 
 type WorkerLifecycle = "idle" | "starting" | "running" | "paused"
 
@@ -75,6 +76,30 @@ export interface WorkerRollbackResult extends WorkerRollbackPreview {
 
 function fromProtoMessage(message: ProtoClineMessage): ClineMessage {
 	return convertProtoToClineMessage(message)
+}
+
+// Cline が JSON.stringify した followup ask の detail（{ question, options, selected? }）を解析する。
+// question 空・selected 済み・parse 失敗は「有効な未回答の質問ではない」として null を返す。
+function parseFollowupDetail(detail: string | undefined): { question: string; options: string[] } | null {
+	if (!detail) {
+		return null
+	}
+	try {
+		const parsed = JSON.parse(detail) as { question?: unknown; options?: unknown; selected?: unknown }
+		const question = typeof parsed.question === "string" ? parsed.question.trim() : ""
+		if (!question) {
+			return null
+		}
+		if (typeof parsed.selected === "string" && parsed.selected.length > 0) {
+			return null
+		}
+		const options = Array.isArray(parsed.options)
+			? parsed.options.filter((option): option is string => typeof option === "string" && option.trim().length > 0)
+			: []
+		return { question, options }
+	} catch {
+		return null
+	}
 }
 
 function isCompletionMessage(message: ClineMessage): boolean {
@@ -122,6 +147,8 @@ export class ClineWorkerAdapter {
 	private resumeAskWaiter?: { resolve: () => void }
 	// Worker 承認待ちを Flash Agent に委ねるリゾルバ（Orchestrator が注入）。
 	private approvalResolver?: WorkerApprovalResolver
+	// survey_plan モードの followup を Orchestrator へ振り分けるハンドラ（Orchestrator が注入）。
+	private surveyQuestionHandler?: SurveyQuestionHandler
 	// 同一 ask（ts 単位）を二重に自動応答しないためのガード。
 	private autoApprovedAskTs = new Set<number>()
 	// 自動応答が進行中の ask。完了通知などと競合しないよう記録する。
@@ -139,6 +166,16 @@ export class ClineWorkerAdapter {
 	/** Orchestrator が Flash Agent ベースの承認判断を注入する。 */
 	setApprovalResolver(resolver: WorkerApprovalResolver | undefined): void {
 		this.approvalResolver = resolver
+	}
+
+	/** Orchestrator が survey_plan の followup 振り分けハンドラを注入する。 */
+	setSurveyQuestionHandler(handler: SurveyQuestionHandler | undefined): void {
+		this.surveyQuestionHandler = handler
+	}
+
+	/** 現在の TaskSpec が survey_plan モードか。 */
+	private isSurveyPlanMode(): boolean {
+		return this.currentTaskSpec?.executionMode === "survey_plan"
 	}
 
 	isRunning(): boolean {
@@ -393,10 +430,45 @@ export class ClineWorkerAdapter {
 
 		const label = message.ask ?? message.say ?? message.type
 		const isCompletion = isCompletionMessage(message)
+
+		// survey_plan モード: Worker の followup ask は通常の worker_detail を出さず、
+		// survey 専用イベントへ振り分ける（B1: アダプタ側で分流）。
+		// partial の途中は壊れた JSON になりうるので、完成した non-partial だけを扱う。
+		if (
+			message.type === "ask" &&
+			!message.partial &&
+			message.ask === "followup" &&
+			this.isSurveyPlanMode() &&
+			this.surveyQuestionHandler
+		) {
+			const parsed = parseFollowupDetail(message.text)
+			if (parsed) {
+				// pWaitFor 待機中の ask を Orchestrator が answerFollowup で進められるよう、
+				// pending ask として記録しておく（通常フローと同じ）。
+				this.lastPendingAsk = { ask: message.ask, ts: message.ts ?? Date.now() }
+				await this.tryFlushInjectionsToPendingAsk()
+				try {
+					await this.surveyQuestionHandler({
+						ts: message.ts ?? Date.now(),
+						question: parsed.question,
+						options: parsed.options,
+					})
+				} catch (error) {
+					KocodeTrace.error("worker_survey_question_failed", error, { ts: message.ts })
+				}
+				return
+			}
+			// parse 失敗時は通常フローへフォールバック（壊れた質問を握り潰さない）。
+		}
+
 		// この ask が Flash Agent の自動承認対象か。対象なら「人手待ち（waiting）」ではなく
 		// 「Flash が処理中（running）」として扱い、ユーザーへの確認待ち通知を出さない。
 		const isAutoApprovableAsk =
-			message.type === "ask" && !message.partial && !!message.ask && !!this.approvalResolver && APPROVAL_ASKS.has(message.ask)
+			message.type === "ask" &&
+			!message.partial &&
+			!!message.ask &&
+			!!this.approvalResolver &&
+			APPROVAL_ASKS.has(message.ask)
 		KocodeTrace.log("worker_event", {
 			activeTaskId: this.activeTaskId,
 			type: message.type,
@@ -595,6 +667,40 @@ export class ClineWorkerAdapter {
 			KocodeTrace.log("worker_inject_success", { ask, textLength: text.length })
 		} catch (error) {
 			KocodeTrace.error("worker_inject_failed", error, { ask })
+		}
+	}
+
+	/** Worker が followup（ask_followup_question）で停止して、ユーザーの回答を待っているか。 */
+	isAwaitingFollowup(): boolean {
+		return this.lastPendingAsk?.ask === "followup"
+	}
+
+	/**
+	 * アンケートカードの回答を、Worker(Cline)自身の ask 応答機構へ直接戻す。
+	 * Flash の再分類を通さず、followup で pWaitFor 待機している ask に messageResponse として注入する。
+	 * これにより一問一答が正しく次の質問へ進む。
+	 */
+	async answerFollowup(text: string): Promise<boolean> {
+		const task = this.controller.task
+		if (!task) {
+			KocodeTrace.warn("worker_followup_answer_no_task", { textLength: text.length })
+			return false
+		}
+		if (this.lastPendingAsk?.ask !== "followup") {
+			KocodeTrace.warn("worker_followup_answer_no_pending", {
+				pendingAsk: this.lastPendingAsk?.ask,
+				textLength: text.length,
+			})
+			return false
+		}
+		try {
+			await task.handleWebviewAskResponse("messageResponse", text)
+			this.lastPendingAsk = undefined
+			KocodeTrace.log("worker_followup_answer_success", { textLength: text.length })
+			return true
+		} catch (error) {
+			KocodeTrace.error("worker_followup_answer_failed", error, { textLength: text.length })
+			return false
 		}
 	}
 }

@@ -6,7 +6,9 @@ export type KocodeTaskStatus = "draft" | "active" | "paused" | "completed" | "ca
 
 // 执行意图:决定 Worker 是只产计划、先计划再实现、还是直接实现。
 // 用于保证 Flash「说法」与系统「动作」一致(言行一致)。
-export type KocodeExecutionMode = "plan_only" | "plan_then_execute" | "execute_directly"
+// survey_plan:复杂/模糊/大型请求专用。Worker 先读上下文做"理解度自评",
+// 再以「一次一题」的选择题逐题追问,最后产出计划报告(与 plan_only 同样只读不写)。
+export type KocodeExecutionMode = "plan_only" | "plan_then_execute" | "execute_directly" | "survey_plan"
 
 export type TaskSpecPatchKind =
 	| "replace_goal"
@@ -76,7 +78,35 @@ export interface WorkerControlRequest {
 
 export type KocodeMessageAuthor = "user" | "flash"
 
-export type KocodeMemoKind = "plan_report" | "completion_report"
+// plan_report:计划报告。completion_report:完成报告。
+// survey_record:survey_plan 模式下「一问一答」的完整问答记录(问答结束时落盘)。
+export type KocodeMemoKind = "plan_report" | "completion_report" | "survey_record"
+
+// survey_plan 模式下,Worker 在独立面板里逐题追问的「一道题」。
+export interface KocodeSurveyQuestion {
+	ts: number
+	question: string
+	options: string[]
+}
+
+// 一次 survey_plan 问答里已问出的某一题及其用户回答。
+export interface KocodeSurveyEntry {
+	question: string
+	options: string[]
+	answer?: string
+	answeredAt?: number
+}
+
+// 一次 survey_plan 问答会话(过程存内存,结束时整理成 survey_record memo 落盘)。
+export interface KocodeSurveySession {
+	taskId: string
+	status: "active" | "completed" | "cancelled"
+	taskGoal?: string
+	entries: KocodeSurveyEntry[]
+	current?: KocodeSurveyQuestion
+	startedAt: number
+	updatedAt: number
+}
 
 export interface KocodeMemoRef {
 	id: string
@@ -151,6 +181,9 @@ export type KocodeEvent =
 	| { type: "artifact_ready"; artifact: LearningArtifact }
 	| { type: "memo_ready"; memo: KocodeMemoDocument }
 	| { type: "memo_selected"; memoId?: string }
+	// survey_plan 专用事件流。Worker 自主 followup ask 不走这里(仍走 worker_detail)。
+	| { type: "survey_question"; question: KocodeSurveyQuestion }
+	| { type: "survey_updated"; survey: KocodeSurveySession }
 
 export interface KocodeUserMessage {
 	text: string
@@ -174,6 +207,8 @@ export interface KocodeSessionState {
 	pendingRollback?: PendingRollbackConfirmation
 	memos: KocodeMemoDocument[]
 	selectedMemoId?: string
+	// 当前 survey_plan 问答会话(进行中存内存)。无会话时为 undefined。
+	survey?: KocodeSurveySession
 }
 
 export interface KocodeOpenWorkbenchRequest {

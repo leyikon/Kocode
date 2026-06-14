@@ -1,18 +1,18 @@
 import type {
-	KocodeChatMessage,
-	KocodeEvent,
-	KocodeMemoDocument,
-	KocodeMemoKind,
-	KocodeMemoRef,
-	KocodeSendResult,
-	KocodeSessionState,
-	KocodeUserMessage,
-	PendingRollbackConfirmation,
-	TaskSpecPatch,
-	WorkerControlRequest,
-	WorkerDigest,
-	WorkerEvent,
-	WorkerRollbackRestoreType,
+    KocodeChatMessage,
+    KocodeEvent,
+    KocodeMemoDocument,
+    KocodeMemoKind,
+    KocodeMemoRef,
+    KocodeSendResult,
+    KocodeSessionState, KocodeSurveyEntry, KocodeSurveyQuestion, KocodeSurveySession,
+    KocodeUserMessage,
+    PendingRollbackConfirmation,
+    TaskSpecPatch,
+    WorkerControlRequest,
+    WorkerDigest,
+    WorkerEvent,
+    WorkerRollbackRestoreType
 } from "@shared/kocode"
 import { Controller } from "@/core/controller"
 import { ClineWorkerAdapter } from "./ClineWorkerAdapter"
@@ -96,7 +96,7 @@ function extractMarkdownTitle(markdown: string): string | undefined {
 }
 
 function defaultMemoTitle(kind: KocodeMemoKind, taskGoal?: string): string {
-	const prefix = kind === "plan_report" ? "計画レポート" : "完了レポート"
+	const prefix = kind === "plan_report" ? "計画レポート" : kind === "survey_record" ? "アンケート記録" : "完了レポート"
 	const goal = taskGoal?.trim()
 	if (!goal) {
 		return prefix
@@ -110,6 +110,24 @@ function memoToRef(memo: KocodeMemoDocument): KocodeMemoRef {
 		title: memo.title,
 		kind: memo.kind,
 	}
+}
+
+// survey の問答全程を Markdown レポートに整形する（survey_record memo の本文）。
+function surveyToMarkdown(survey: KocodeSurveySession): string {
+	const lines: string[] = []
+	const heading = survey.taskGoal?.trim() ? `アンケート記録: ${survey.taskGoal.trim()}` : "アンケート記録"
+	lines.push(`# ${heading}`, "")
+	survey.entries.forEach((entry, index) => {
+		lines.push(`## Q${index + 1}. ${entry.question}`)
+		if (entry.options.length > 0) {
+			lines.push("", "選択肢:")
+			for (const option of entry.options) {
+				lines.push(`- ${option}`)
+			}
+		}
+		lines.push("", `**回答:** ${entry.answer ?? "(未回答)"}`, "")
+	})
+	return lines.join("\n").trim()
 }
 
 export class KocodeOrchestrator {
@@ -142,6 +160,8 @@ export class KocodeOrchestrator {
 	private memos: KocodeMemoDocument[] = []
 	private memoReadyRef?: KocodeMemoRef
 	private selectedMemoId?: string
+	// 当前 survey_plan 问答会话(进行中存内存,结束时整理成 survey_record memo 落盘)。
+	private survey?: KocodeSurveySession
 	private readonly memosReady: Promise<void>
 	// 串行化用户消息处理，避免并发 sendUserMessage 交错改写 TaskSpec 状态（#1 并发场景）。
 	private sendChain: Promise<unknown> = Promise.resolve()
@@ -163,6 +183,8 @@ export class KocodeOrchestrator {
 		this.worker = new ClineWorkerAdapter(controller, this.bus)
 		// Worker が承認待ちで止まったら、Flash Agent に許可/拒否を判断させて自動応答する。
 		this.worker.setApprovalResolver((request) => this.resolveWorkerApproval(request))
+		// survey_plan モードの followup は survey 専用イベントへ振り分ける。
+		this.worker.setSurveyQuestionHandler((question) => this.handleSurveyQuestion(question))
 		this.unsubscribeWorkerMonitor = this.bus.subscribe((event) => {
 			void this.handleWorkerEventForFlash(event)
 		})
@@ -212,6 +234,7 @@ export class KocodeOrchestrator {
 			pendingRollback: this.pendingRollback,
 			memos: [...this.memos],
 			selectedMemoId: this.selectedMemoId,
+			survey: this.survey ? { ...this.survey, entries: [...this.survey.entries] } : undefined,
 		}
 	}
 
@@ -480,6 +503,146 @@ export class KocodeOrchestrator {
 		return true
 	}
 
+	/**
+	 * アンケートカードの回答を Worker(Cline)自身の ask 応答へ直接戻す。
+	 * Flash の意図分類を通さず、followup ask に回答を注入して一問一答を次へ進める。
+	 * 回答はチャットにもユーザー発言として残す（UI 上の流れを保つため）。
+	 */
+	async answerWorkerAsk(text: string): Promise<KocodeSendResult> {
+		const run = this.sendChain.then(
+			() => this.processAnswerWorkerAsk(text),
+			() => this.processAnswerWorkerAsk(text),
+		)
+		this.sendChain = run.catch(() => undefined)
+		return run
+	}
+
+	private async processAnswerWorkerAsk(text: string): Promise<KocodeSendResult> {
+		// followup を待っていなければ、通常のユーザーメッセージ処理に完全フォールバックする
+		// （メッセージ登録も processUserMessage 側に任せ、二重登録を避ける）。
+		if (!this.worker.isAwaitingFollowup()) {
+			KocodeTrace.log("answer_worker_ask_no_pending", { text })
+			return this.processUserMessage({ text })
+		}
+
+		const userMessage = this.toUserMessage({ text })
+		this.messages.push(userMessage)
+		await this.bus.emit({ type: "user_message", message: userMessage })
+
+		KocodeTrace.log("answer_worker_ask", { messageId: userMessage.id, text })
+		// survey_plan 進行中なら、現在の質問に対する回答として survey に記録する。
+		this.recordSurveyAnswer(text)
+		const delivered = await this.worker.answerFollowup(text)
+		if (!delivered) {
+			// 回答が届かなかった（タスクが既に進んだ等）場合のみ、登録済みメッセージを基に通常処理へ。
+			KocodeTrace.warn("answer_worker_ask_undelivered", { messageId: userMessage.id })
+			return { accepted: true, messageId: userMessage.id, taskSpec: this.taskSpecManager.getTaskSpec() }
+		}
+		return { accepted: true, messageId: userMessage.id, taskSpec: this.taskSpecManager.getTaskSpec() }
+	}
+
+	private snapshotSurvey(): KocodeSurveySession {
+		const survey = this.survey!
+		return { ...survey, entries: [...survey.entries] }
+	}
+
+	/**
+	 * survey_plan モードで Worker が出した followup を survey 会話へ取り込み、
+	 * survey 専用イベントを前端へ流す。通常の followup（inline カード）とは別系統。
+	 */
+	private async handleSurveyQuestion(question: { ts: number; question: string; options: string[] }): Promise<void> {
+		await this.ensureReady()
+		const taskSpec = this.taskSpecManager.getTaskSpec()
+		const now = Date.now()
+		if (!this.survey || this.survey.status !== "active") {
+			this.survey = {
+				taskId: taskSpec?.id ?? this.bus.getDigest().taskId ?? "unknown-task",
+				status: "active",
+				taskGoal: taskSpec?.goal,
+				entries: [],
+				startedAt: now,
+				updatedAt: now,
+			}
+		}
+		const current: KocodeSurveyQuestion = {
+			ts: question.ts,
+			question: question.question,
+			options: question.options,
+		}
+		this.survey.current = current
+		this.survey.updatedAt = now
+		KocodeTrace.log("survey_question", {
+			taskId: this.survey.taskId,
+			question: current.question,
+			optionCount: current.options.length,
+		})
+		await this.bus.emit({ type: "survey_question", question: current })
+		await this.bus.emit({ type: "survey_updated", survey: this.snapshotSurvey() })
+	}
+
+	/** 現在の survey 質問に対するユーザー回答を記録する（survey_plan 以外では no-op）。 */
+	private recordSurveyAnswer(answer: string): void {
+		if (!this.survey || this.survey.status !== "active" || !this.survey.current) {
+			return
+		}
+		const now = Date.now()
+		const entry: KocodeSurveyEntry = {
+			question: this.survey.current.question,
+			options: this.survey.current.options,
+			answer,
+			answeredAt: now,
+		}
+		this.survey.entries.push(entry)
+		this.survey.current = undefined
+		this.survey.updatedAt = now
+		KocodeTrace.log("survey_answer", {
+			taskId: this.survey.taskId,
+			answeredCount: this.survey.entries.length,
+		})
+		void this.bus.emit({ type: "survey_updated", survey: this.snapshotSurvey() })
+	}
+
+	/** survey 会話を終了状態にして、問答全程を survey_record memo として落盘する。 */
+	private async finalizeSurvey(status: "completed" | "cancelled"): Promise<void> {
+		if (!this.survey || this.survey.status !== "active") {
+			return
+		}
+		this.survey.status = status
+		this.survey.current = undefined
+		this.survey.updatedAt = Date.now()
+		await this.bus.emit({ type: "survey_updated", survey: this.snapshotSurvey() })
+
+		// 回答が1件もないまま終わった survey は記録として残さない。
+		if (this.survey.entries.length === 0) {
+			KocodeTrace.log("survey_finalize_empty", { taskId: this.survey.taskId, status })
+			return
+		}
+		await this.persistSurveyRecord(this.survey)
+	}
+
+	/** survey の問答記録を Markdown 化して memo（kind=survey_record）として保存する。 */
+	private async persistSurveyRecord(survey: KocodeSurveySession): Promise<void> {
+		await this.ensureReady()
+		const markdown = surveyToMarkdown(survey)
+		const memo: KocodeMemoDocument = {
+			id: `memo-${survey.updatedAt}-${Math.random().toString(36).slice(2)}`,
+			taskId: survey.taskId,
+			kind: "survey_record",
+			title: defaultMemoTitle("survey_record", survey.taskGoal),
+			markdown,
+			createdAt: survey.updatedAt,
+			taskGoal: survey.taskGoal,
+		}
+		this.memos = trimMemoList([...this.memos, memo])
+		await this.memoStore.save(this.memos)
+		await this.bus.emit({ type: "memo_ready", memo })
+		KocodeTrace.log("survey_record_saved", {
+			memoId: memo.id,
+			taskId: survey.taskId,
+			entryCount: survey.entries.length,
+		})
+	}
+
 	async workerControl(request: WorkerControlRequest): Promise<void> {
 		KocodeTrace.log("external_worker_control", {
 			action: request.action,
@@ -732,6 +895,8 @@ export class KocodeOrchestrator {
 			case "completed":
 				this.clearStallRecovery(digest.taskId)
 				await this.emitTaskSpec(this.taskSpecManager.markCompleted())
+				// survey_plan の問答が終わって計画が出た → 問答記録を survey_record として落盘。
+				await this.finalizeSurvey("completed")
 				await this.scheduleWorkerUpdate("completed", {
 					critical: true,
 					memoRefs: this.memoReadyRef ? [this.memoReadyRef] : undefined,
@@ -739,6 +904,7 @@ export class KocodeOrchestrator {
 				break
 			case "failed":
 				this.clearStallRecovery(digest.taskId)
+				await this.finalizeSurvey("cancelled")
 				await this.scheduleWorkerUpdate("failed", { critical: true })
 				break
 			case "paused":
@@ -747,6 +913,7 @@ export class KocodeOrchestrator {
 				break
 			case "cancelled":
 				this.clearStallRecovery(digest.taskId)
+				await this.finalizeSurvey("cancelled")
 				await this.scheduleWorkerUpdate("cancelled", { critical: true })
 				break
 		}
@@ -792,7 +959,10 @@ export class KocodeOrchestrator {
 		}
 		await this.ensureReady()
 		const taskSpec = this.taskSpecManager.getTaskSpec()
-		const kind: KocodeMemoKind = taskSpec?.executionMode === "plan_only" ? "plan_report" : "completion_report"
+		const kind: KocodeMemoKind =
+			taskSpec?.executionMode === "plan_only" || taskSpec?.executionMode === "survey_plan"
+				? "plan_report"
+				: "completion_report"
 		const taskId = taskSpec?.id ?? this.bus.getDigest().taskId ?? "unknown-task"
 		const memo: KocodeMemoDocument = {
 			id: `memo-${event.ts}-${Math.random().toString(36).slice(2)}`,

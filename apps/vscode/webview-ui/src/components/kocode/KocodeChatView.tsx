@@ -1,15 +1,14 @@
-import type { KocodeCharacterId, KocodeChatMessage, KocodeEvent, KocodeMemoRef } from "@shared/kocode"
+import type { KocodeCharacterId, KocodeChatMessage, KocodeEvent, KocodeMemoRef, KocodeSurveyQuestion } from "@shared/kocode"
 import { BooleanRequest, EmptyRequest } from "@shared/proto/cline/common"
 import {
-	BookOpenIcon,
-	CheckIcon,
-	ChevronLeftIcon,
-	FileTextIcon,
-	MenuIcon,
-	PlusIcon,
-	SearchIcon,
-	SendIcon,
-	SettingsIcon,
+    BookOpenIcon,
+    CheckIcon,
+    ChevronLeftIcon, ClipboardListIcon, FileTextIcon,
+    MenuIcon,
+    PlusIcon,
+    SearchIcon,
+    SendIcon,
+    SettingsIcon
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useMount } from "react-use"
@@ -18,12 +17,12 @@ import himeAvatar from "@/assets/kocode/hime-avatar.png"
 import kokoAvatar from "@/assets/kocode/koko-avatar.png"
 import manaAvatar from "@/assets/kocode/mana-avatar.png"
 import {
-	CHAT_CONSTANTS,
-	ChatLayout,
-	InputSection,
-	useChatState,
-	useMessageHandlers,
-	useScrollBehavior,
+    CHAT_CONSTANTS,
+    ChatLayout,
+    InputSection,
+    useChatState,
+    useMessageHandlers,
+    useScrollBehavior,
 } from "@/components/chat/chat-view"
 import { MarkdownRow } from "@/components/chat/MarkdownRow"
 import { normalizeApiConfiguration } from "@/components/settings/utils/providerUtils"
@@ -199,6 +198,109 @@ const MemoFileCard = ({ memo, onOpen }: { memo: KocodeMemoRef; onOpen: (memoId: 
 	</button>
 )
 
+// survey_plan モードの「アンケートを開く」ジャンプカード。
+// 一問一答は独立パネル（作業メモの「アンケート」ページ）で行うので、
+// チャット側は質問の総数と最新の質問プレビューだけ見せて、パネルへ誘導する。
+const KocodeSurveyJumpCard = ({
+	character,
+	question,
+	answeredCount,
+	onOpen,
+}: {
+	character: KocodeCharacter
+	question: KocodeSurveyQuestion
+	answeredCount: number
+	onOpen: () => void
+}) => (
+	<div className="kocode-row kocode-row-assistant">
+		<Avatar character={character} />
+		<div className="kocode-bubble-wrap">
+			<button className="kocode-survey-jump-card" onClick={onOpen} type="button">
+				<span className="kocode-survey-jump-icon">
+					<ClipboardListIcon size={18} />
+				</span>
+				<span className="kocode-survey-jump-main">
+					<strong>アンケートで一緒に整理するにゃ</strong>
+					<span className="kocode-survey-jump-preview">{question.question}</span>
+					<small>{answeredCount > 0 ? `${answeredCount}問 回答済み · タップで続ける` : "タップして回答する"}</small>
+				</span>
+			</button>
+		</div>
+	</div>
+)
+
+// アンケート用 followup の状態。Worker(Cline)が ask_followup_question で止まっている時の
+// 「いま聞かれている 1 問」を表す。question 全文 + 選択肢を持つ。
+type ActiveFollowup = {
+	ts: number
+	question: string
+	options: string[]
+}
+
+// worker_detail(kind=ask, title=followup)の detail は Cline が JSON.stringify した
+// { question, options, selected? } 文字列。partial の途中は壊れた JSON になりうるので、
+// parse 失敗・question 空は無視して直前の完全な 1 問を保持する。
+const parseFollowupDetail = (detail: string | undefined, ts: number): ActiveFollowup | null => {
+	if (!detail) {
+		return null
+	}
+	try {
+		const parsed = JSON.parse(detail) as { question?: unknown; options?: unknown; selected?: unknown }
+		const question = typeof parsed.question === "string" ? parsed.question.trim() : ""
+		if (!question) {
+			return null
+		}
+		// ユーザーが既に選択済み(selected あり)なら、その 1 問はもう答え終わっているので出さない。
+		if (typeof parsed.selected === "string" && parsed.selected.length > 0) {
+			return null
+		}
+		const options = Array.isArray(parsed.options)
+			? parsed.options.filter((option): option is string => typeof option === "string" && option.trim().length > 0)
+			: []
+		return { ts, question, options }
+	} catch {
+		return null
+	}
+}
+
+// 一問一答のアンケートカード。question を全文表示し、options をボタンにする。
+// 「モデルがまれに複数問をまとめて出した」場合も、question を原文のまま出すだけで壊れない。
+// 自由入力は下のメッセージ入力欄が兜底になるので、ここでは選択肢ボタンのみ提供する。
+const KocodeSurveyCard = ({
+	followup,
+	character,
+	onSelectOption,
+}: {
+	followup: ActiveFollowup
+	character: KocodeCharacter
+	onSelectOption: (option: string) => void
+}) => (
+	<div className="kocode-row kocode-row-assistant">
+		<Avatar character={character} />
+		<div className="kocode-bubble-wrap">
+			<div className="kocode-bubble kocode-assistant-bubble kocode-survey-card">
+				<div className="kocode-survey-question">
+					<MarkdownRow markdown={followup.question} />
+				</div>
+				{followup.options.length > 0 && (
+					<div className="kocode-survey-options">
+						{followup.options.map((option) => (
+							<button
+								className="kocode-survey-option"
+								key={option}
+								onClick={() => onSelectOption(option)}
+								type="button">
+								{option}
+							</button>
+						))}
+					</div>
+				)}
+				<small className="kocode-survey-hint">下の入力欄から、自分の言葉で答えてもいいにゃ。</small>
+			</div>
+		</div>
+	</div>
+)
+
 const KocodeTypingBubble = ({ character, timestamp }: { character: KocodeCharacter; timestamp: number }) => (
 	<div aria-label={`${character.name}が入力中`} className="kocode-row kocode-row-assistant kocode-typing-row">
 		<Avatar character={character} />
@@ -314,6 +416,13 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 	const [isWorkerWaiting, setIsWorkerWaiting] = useState(false)
 	const [waitingCharacterId, setWaitingCharacterId] = useState<KocodeCharacterId>("koko")
 	const [waitingSince, setWaitingSince] = useState(Date.now())
+	// アンケートで「いま聞かれている 1 問」。followup ask が来たらセットし、
+	// 回答送信 / 別状態への遷移でクリアする。
+	const [activeFollowup, setActiveFollowup] = useState<ActiveFollowup | null>(null)
+	// survey_plan モードの状態。survey_question が来たら最新の質問を保持し、
+	// チャットには「アンケートを開く」ジャンプカードだけ出す（一問一答はパネル側）。
+	const [surveyQuestion, setSurveyQuestion] = useState<KocodeSurveyQuestion | null>(null)
+	const [surveyAnsweredCount, setSurveyAnsweredCount] = useState(0)
 	const selectedCharacter = useMemo(
 		() => KOCODE_CHARACTERS.find((character) => character.id === selectedCharacterId) ?? KOCODE_CHARACTERS[0],
 		[selectedCharacterId],
@@ -349,6 +458,32 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 			setIsAwaitingKocode(true)
 			setWaitingCharacterId(selectedCharacter.id)
 			setWaitingSince(Date.now())
+			// followup（アンケート）待ちのときは、入力欄の自由回答も Worker の ask へ直接戻す。
+			// inline followup（activeFollowup）と survey_plan（surveyQuestion）の両方が対象。
+			const hadActiveFollowup = activeFollowup !== null || surveyQuestion !== null
+			// 回答を送ったら、いま出ているアンケートカードは片付ける(次の 1 問が来たら再表示)。
+			setActiveFollowup(null)
+			setSurveyQuestion(null)
+
+			if (hadActiveFollowup) {
+				try {
+					await KocodeServiceClient.answerWorkerAsk({
+						text: messageToSend,
+						characterId: selectedCharacter.id,
+					})
+				} catch (error) {
+					setIsAwaitingKocode(false)
+					console.error(error)
+					return
+				}
+				chatState.setInputValue("")
+				chatState.setActiveQuote(null)
+				chatState.setSelectedImages([])
+				chatState.setSelectedFiles([])
+				chatState.setSendingDisabled(false)
+				chatState.setEnableButtons(true)
+				return
+			}
 
 			try {
 				await KocodeServiceClient.sendUserMessage({
@@ -370,7 +505,7 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 			chatState.setSendingDisabled(false)
 			chatState.setEnableButtons(true)
 		},
-		[chatState, selectedCharacter.id],
+		[chatState, selectedCharacter.id, activeFollowup, surveyQuestion],
 	)
 
 	const kocodeMessageHandlers = useMemo(
@@ -385,6 +520,23 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 		void KocodeServiceClient.openWorkbench({ memoId })
 	}, [])
 
+	// アンケートのジャンプカードをタップ: 独立パネル（作業メモ）を開いて一問一答へ誘導する。
+	const openSurvey = useCallback(() => {
+		void KocodeServiceClient.openWorkbench(EmptyRequest.create({}))
+	}, [])
+
+	// アンケートの選択肢をタップ: その選択肢を Worker 自身の followup ask へ直接戻す。
+	// Flash の再分類を通さず、answerWorkerAsk で一問一答を次の質問へ進める。
+	const handleSelectSurveyOption = useCallback(
+		(option: string) => {
+			setActiveFollowup(null)
+			setIsWorkerWaiting(true)
+			setWaitingSince(Date.now())
+			void KocodeServiceClient.answerWorkerAsk({ text: option, characterId: selectedCharacter.id }).catch(console.error)
+		},
+		[selectedCharacter.id],
+	)
+
 	useEffect(() => {
 		KocodeServiceClient.getKocodeSession(EmptyRequest.create({}))
 			.then((session) => {
@@ -396,6 +548,11 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 				setIsWorkerWaiting(shouldWait)
 				if (shouldWait) {
 					setWaitingSince(Date.now())
+				}
+				// 進行中の survey があれば、ジャンプカードの初期状態を復元する。
+				if (session.survey && session.survey.status === "active") {
+					setSurveyAnsweredCount(session.survey.entries.length)
+					setSurveyQuestion(session.survey.current ?? null)
 				}
 			})
 			.catch(console.error)
@@ -428,6 +585,38 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 						}
 						return shouldWait
 					})
+					// 終了系の状態に入ったら、出しっぱなしのアンケートカードを片付ける。
+					if (
+						event.digest.status === "completed" ||
+						event.digest.status === "failed" ||
+						event.digest.status === "cancelled"
+					) {
+						setActiveFollowup(null)
+						setSurveyQuestion(null)
+					}
+				}
+				// アンケートの 1 問: Worker(Cline)が ask_followup_question で止まった時だけカードを出す。
+				if (event.type === "worker_detail") {
+					if (event.event.kind === "ask" && event.event.title === "followup") {
+						const followup = parseFollowupDetail(event.event.detail, event.event.ts)
+						if (followup) {
+							setActiveFollowup(followup)
+						}
+					} else if (event.event.kind === "completed" || event.event.kind === "cancelled") {
+						setActiveFollowup(null)
+					}
+				}
+				// survey_plan モード: 一問一答は独立パネルで行い、チャットにはジャンプカードだけ出す。
+				if (event.type === "survey_question") {
+					setSurveyQuestion(event.question)
+				}
+				if (event.type === "survey_updated") {
+					setSurveyAnsweredCount(event.survey.entries.length)
+					if (event.survey.status !== "active") {
+						setSurveyQuestion(null)
+					} else {
+						setSurveyQuestion(event.survey.current ?? null)
+					}
 				}
 			},
 			onError: console.error,
@@ -502,10 +691,28 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 									atBottomStateChange={scrollBehavior.setIsAtBottom}
 									className="kocode-thread scrollable"
 									components={{
-										Footer: () =>
-											showWaitingBubble ? (
-												<KocodeTypingBubble character={waitingCharacter} timestamp={waitingSince} />
-											) : null,
+										Footer: () => (
+											<>
+												{activeFollowup && (
+													<KocodeSurveyCard
+														character={selectedCharacter}
+														followup={activeFollowup}
+														onSelectOption={handleSelectSurveyOption}
+													/>
+												)}
+												{surveyQuestion && (
+													<KocodeSurveyJumpCard
+														answeredCount={surveyAnsweredCount}
+														character={selectedCharacter}
+														onOpen={openSurvey}
+														question={surveyQuestion}
+													/>
+												)}
+												{showWaitingBubble && (
+													<KocodeTypingBubble character={waitingCharacter} timestamp={waitingSince} />
+												)}
+											</>
+										),
 									}}
 									data={kocodeMessages}
 									initialTopMostItemIndex={kocodeMessages.length - 1}

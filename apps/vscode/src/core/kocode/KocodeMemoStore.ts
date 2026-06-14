@@ -11,7 +11,7 @@ const MAX_MEMO_DOCUMENTS = 100
 const KocodeMemoDocumentSchema = z.object({
 	id: z.string(),
 	taskId: z.string(),
-	kind: z.enum(["plan_report", "completion_report"]),
+	kind: z.enum(["plan_report", "completion_report", "survey_record"]),
 	title: z.string(),
 	markdown: z.string(),
 	createdAt: z.number(),

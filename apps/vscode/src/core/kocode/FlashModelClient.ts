@@ -14,7 +14,7 @@ export type FlashModelIntent =
 	| "worker_control"
 
 const TASK_MODE_VALUES = ["coding", "debugging", "learning", "slide_preview", "quiz"] as const
-const EXECUTION_MODE_VALUES = ["plan_only", "plan_then_execute", "execute_directly"] as const
+const EXECUTION_MODE_VALUES = ["plan_only", "plan_then_execute", "execute_directly", "survey_plan"] as const
 const PATCH_KIND_VALUES: TaskSpecPatchKind[] = [
 	"replace_goal",
 	"add_constraint",
@@ -80,6 +80,7 @@ const FlashDecisionSchema = z
 						steps: z.number().int().min(1).max(3).nullable().optional(),
 						restoreType: z.enum(WORKER_ROLLBACK_RESTORE_TYPES).nullable().optional(),
 					})
+					.nullable()
 					.optional(),
 			})
 			.optional(),
@@ -331,7 +332,7 @@ patch、workerControl、memoryUpdate は不要な場合でも null ではなく�
   "task": {
     "goal": string | null,
     "mode": "coding" | "debugging" | "learning" | "slide_preview" | "quiz" | null,
-    "executionMode": "plan_only" | "plan_then_execute" | "execute_directly" | null,
+    "executionMode": "plan_only" | "plan_then_execute" | "execute_directly" | "survey_plan" | null,
     "files": string[],
     "constraints": string[],
     "acceptanceCriteria": string[]
@@ -370,11 +371,67 @@ intent 判断:
 - explanation_request はプロジェクトに依存しない純粋な概念説明のときだけ。
 
 【executionMode（言行一致）】:
+
+★★★ 最優先判断: survey_plan（アンケート方式）かどうかを最初に決める ★★★
+new_task / extend_task で「作業を始める」と判断したら、他の executionMode を考える前に、まず「これは survey_plan にすべきか？」を最初にチェックしてください。
+survey_plan は「複雑・あいまい・大規模」な依頼のための特別モードです。該当するなら、たとえ実装依頼に見えても execute_directly や plan_then_execute ではなく **必ず survey_plan を優先** してください（ここでの優先順位は survey_plan > その他）。
+
+survey_plan にする条件（どれか1つでも当てはまれば survey_plan）:
+1. ゼロから何かを作る（アプリ / サイト / システム / ツール / サービス全体）。
+2. 大規模な変更（全体リファクタ、技術スタック移行、アーキテクチャ変更、横断的な機能追加）。
+3. 目標があいまい（ユーザー自身がまだ何を作りたいか固まっていない / ぼんやりした願望）。
+4. 未確定の重要な決定が多い（技術選定・認証の有無・データ保存先・画面構成などが未定で、聞かずに進めると確実に手戻りする）。
+
+survey_plan にしない条件（はっきり小さく具体的なら survey_plan にしない）:
+- 1ファイル / 1関数 / 1箇所の具体的な修正・追加。
+- 明確で範囲の狭いバグ修正・文言変更・色やスタイルの微調整。
+- 既に方針が決まっていて、未知の決定が実質ない依頼。
+
+判断の核心は「文章が長いか」ではなく「先に確認しないと Worker がほぼ確実に間違った方向に作るか」です。間違える余地が大きい＝survey_plan。
+
+★ survey_plan にすべき例（これらは executionMode = "survey_plan"）:
+- 「ToDoアプリをつくりたいにゃTodoアプリを作って」
+- 「ブログサイトを作りたい」
+- 「ECサイトの管理画面を作って」
+- 「ログインして投稿できる掲示板がほしい」
+- 「チャットアプリを一から作りたい」
+- 「ポートフォリオサイトを作って」
+- 「予約システムを作りたい」
+- 「プロジェクト全体をリファクタしてほしい」
+- 「このプロジェクトをTypeScriptに移行して」
+- 「アプリ全体に多言語対応を入れたい」
+- 「認証システムをまるごと入れてほしい」
+- 「データベース周りを全部作り直したい」
+- 「なにかツールを作りたいんだけど、まだぼんやりしてる」
+- 「データを管理できる何かがほしい」
+- 「ユーザー管理をいい感じに入れてよ」
+- 「このアプリをもっと使いやすくしたい」
+- 「帮我做一个待办事项App」
+- 「我想做个博客网站」
+- 「给我搭一个电商后台」
+- 「把整个项目重构一下」
+- 「帮我把项目迁移到TypeScript」
+- 「我想做个工具但还没想好具体长啥样」
+- 「想加个用户系统，你看看怎么弄好」
+
+★ survey_plan にしない例（execute_directly などにする）:
+- 「ログインボタンが押せないバグを直して」→ debugging / execute_directly
+- 「トップページのタイトルを青色にして」→ execute_directly
+- 「user.ts のこの関数に null チェックを足して」→ execute_directly
+- 「READMEにインストール手順を1段落追加して」→ execute_directly
+- 「このエラーを直して」→ debugging
+- 「修一下登录按钮点不了的bug」→ debugging / execute_directly
+- 「把首页标题颜色改成蓝色」→ execute_directly
+- 「给这个函数加个空值判断」→ execute_directly
+
+survey_plan のとき reply は「先に何を作りたいか一緒に整理させてにゃ」のように一人称で、許可を求めずに伝えてください。
+
+その他の executionMode（survey_plan に該当しない場合のみ判断する）:
 - reply で「先に計画を立てる」「やり方を整理する」「どう進めるか考える」のような計画ニュアンスを言ったら、task.executionMode を必ず plan_only か plan_then_execute にする。execute_directly にしてはいけない（言ったことと動作を一致させる）。
 - ユーザーが「まず計画」「方案だけ」「どう進めるか見せて」と言い、かつ実装してよさそうなら plan_then_execute。
 - ユーザーが「先别改」「まだ実装しないで」「コードは触らないで」「計画だけ」と言ったら、必ず plan_only。
 - それ以外の通常の実装依頼は execute_directly。
-- plan_only / plan_then_execute のときは、reply で「まず作り方を整理してくるね」のように一人称で伝える。「計画していい？」と許可を求めてはいけない（システムは確認待ちにしない。そのまま進める）。
+- plan_only / plan_then_execute / survey_plan のときは、reply で「まず作り方を整理してくるね」のように一人称で伝える。「計画していい？」と許可を求めてはいけない（システムは確認待ちにしない。そのまま進める）。
 
 判断のヒント:
 - 作業動詞があり、現在 TaskSpec がない / 完了済み / キャンセル済みなら new_task。
