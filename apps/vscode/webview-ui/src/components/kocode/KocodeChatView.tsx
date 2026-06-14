@@ -1,14 +1,15 @@
 import type { KocodeCharacterId, KocodeChatMessage, KocodeEvent, KocodeMemoRef, KocodeSurveyQuestion } from "@shared/kocode"
 import { BooleanRequest, EmptyRequest } from "@shared/proto/cline/common"
 import {
-    BookOpenIcon,
-    CheckIcon,
-    ChevronLeftIcon, ClipboardListIcon, FileTextIcon,
-    MenuIcon,
-    PlusIcon,
-    SearchIcon,
-    SendIcon,
-    SettingsIcon
+	BookOpenIcon,
+	CheckIcon,
+	ChevronLeftIcon,
+	ClipboardListIcon,
+	FileTextIcon,
+	MenuIcon,
+	PlusIcon,
+	SendIcon,
+	SettingsIcon,
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useMount } from "react-use"
@@ -17,12 +18,12 @@ import himeAvatar from "@/assets/kocode/hime-avatar.png"
 import kokoAvatar from "@/assets/kocode/koko-avatar.png"
 import manaAvatar from "@/assets/kocode/mana-avatar.png"
 import {
-    CHAT_CONSTANTS,
-    ChatLayout,
-    InputSection,
-    useChatState,
-    useMessageHandlers,
-    useScrollBehavior,
+	CHAT_CONSTANTS,
+	ChatLayout,
+	InputSection,
+	useChatState,
+	useMessageHandlers,
+	useScrollBehavior,
 } from "@/components/chat/chat-view"
 import { MarkdownRow } from "@/components/chat/MarkdownRow"
 import { normalizeApiConfiguration } from "@/components/settings/utils/providerUtils"
@@ -111,7 +112,7 @@ const KocodeHeader = ({
 }) => (
 	<header className="kocode-topbar">
 		<button
-			aria-label={isContactsView ? "チャットに戻る" : "連絡先を開く"}
+			aria-label={isContactsView ? "チャットに戻る" : "キャラクターを選ぶ"}
 			className="kocode-icon-button"
 			onClick={isContactsView ? onBackToChat : onOpenContacts}
 			type="button">
@@ -120,7 +121,7 @@ const KocodeHeader = ({
 		<div className="kocode-logo">
 			<span aria-hidden>♡</span>
 			<div>
-				<strong>{isContactsView ? "連絡先" : "Kocode / ココーデ"}</strong>
+				<strong>{isContactsView ? "キャラクター" : "Kocode / ココーデ"}</strong>
 				{!isContactsView && (
 					<small>
 						{character.name}・{character.tag}
@@ -372,11 +373,7 @@ const KocodeContactsView = ({
 	onSelectCharacter: (character: KocodeCharacter) => void
 }) => (
 	<section className="kocode-contacts">
-		<div className="kocode-contact-search">
-			<SearchIcon size={15} />
-			<span>キャラクターを探す</span>
-		</div>
-		<div className="kocode-contact-section-title">Kocode Friends</div>
+		<div className="kocode-contact-section-title">応対スタイル</div>
 		<div className="kocode-contact-list">
 			{characters.map((character) => {
 				const selected = character.id === selectedCharacter.id
@@ -403,7 +400,7 @@ const KocodeContactsView = ({
 				)
 			})}
 		</div>
-		<div className="kocode-contact-note">左上のボタンで、いつでもチャットに戻れるにゃ。</div>
+		<div className="kocode-contact-note">次のメッセージから、このキャラクターで返事するにゃ。</div>
 	</section>
 )
 
@@ -461,11 +458,15 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 			// followup（アンケート）待ちのときは、入力欄の自由回答も Worker の ask へ直接戻す。
 			// inline followup（activeFollowup）と survey_plan（surveyQuestion）の両方が対象。
 			const hadActiveFollowup = activeFollowup !== null || surveyQuestion !== null
-			// 回答を送ったら、いま出ているアンケートカードは片付ける(次の 1 問が来たら再表示)。
-			setActiveFollowup(null)
-			setSurveyQuestion(null)
 
 			if (hadActiveFollowup) {
+				if (images.length > 0 || files.length > 0) {
+					setIsAwaitingKocode(false)
+					return
+				}
+				// 回答を送ったら、いま出ているアンケートカードは片付ける(次の 1 問が来たら再表示)。
+				setActiveFollowup(null)
+				setSurveyQuestion(null)
 				try {
 					await KocodeServiceClient.answerWorkerAsk({
 						text: messageToSend,
@@ -661,6 +662,8 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 	useMount(() => chatState.textAreaRef.current?.focus())
 
 	const attachmentsDisabled = chatState.selectedImages.length + chatState.selectedFiles.length >= MAX_ATTACHMENTS
+	const isAnsweringQuestion = activeFollowup !== null || surveyQuestion !== null
+	const shouldDisableAttachments = attachmentsDisabled || isAnsweringQuestion
 
 	return (
 		<ChatLayout isHidden={isHidden}>
@@ -744,7 +747,7 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 						<button
 							aria-label="ファイルや画像を追加"
 							className="kocode-compose-action"
-							disabled={attachmentsDisabled}
+							disabled={shouldDisableAttachments}
 							onClick={() => void selectFilesAndImages()}
 							type="button">
 							<PlusIcon size={19} />
@@ -756,7 +759,7 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 								placeholderText={selectedCharacter.placeholder}
 								scrollBehavior={scrollBehavior}
 								selectFilesAndImages={selectFilesAndImages}
-								shouldDisableFilesAndImages={attachmentsDisabled}
+								shouldDisableFilesAndImages={shouldDisableAttachments}
 								variant="kocode"
 							/>
 						</div>

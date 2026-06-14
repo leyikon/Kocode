@@ -465,24 +465,8 @@
 	overflow-y: auto;
 }
 
-.kocode-contact-search {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	height: 38px;
-	flex-shrink: 0;
-	padding: 0 14px;
-	border: 1px solid rgba(232, 214, 188, 0.8);
-	border-radius: 999px;
-	background: rgba(255, 253, 250, 0.88);
-	color: #a29184;
-	font-size: 12px;
-	font-weight: 650;
-	box-shadow: 0 5px 14px rgba(119, 100, 71, 0.06);
-}
-
 .kocode-contact-section-title {
-	margin: 18px 4px 9px;
+	margin: 3px 4px 12px;
 	color: var(--kocode-accent);
 	font-size: 12px;
 	font-weight: 800;
@@ -776,8 +760,8 @@
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	border: 1px solid color-mix(in srgb, var(--kocode-accent) 40%, #ecd9bf);
-	background: color-mix(in srgb, var(--kocode-soft) 70%, #ffffff);
+	border-color: color-mix(in srgb, var(--kocode-accent) 18%, #ecd9bf);
+	background: rgba(255, 253, 250, 0.96);
 }
 
 .kocode-survey-question {
@@ -794,12 +778,12 @@
 .kocode-survey-option {
 	display: block;
 	width: 100%;
-	padding: 9px 12px;
-	border: 1px solid color-mix(in srgb, var(--kocode-accent) 38%, #d8d8d8);
-	border-radius: 13px;
-	background: rgba(255, 255, 255, 0.86);
+	padding: 8px 10px;
+	border: 1px solid color-mix(in srgb, var(--kocode-accent) 22%, #d8d8d8);
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--kocode-accent) 6%, #ffffff);
 	color: var(--kocode-text);
-	font-size: 12.5px;
+	font-size: 12px;
 	font-weight: 650;
 	line-height: 1.45;
 	text-align: left;
@@ -811,8 +795,8 @@
 }
 
 .kocode-survey-option:hover {
-	border-color: var(--kocode-accent);
-	background: color-mix(in srgb, var(--kocode-accent) 12%, #ffffff);
+	border-color: color-mix(in srgb, var(--kocode-accent) 46%, #d8d8d8);
+	background: color-mix(in srgb, var(--kocode-accent) 10%, #ffffff);
 	transform: translateY(-1px);
 }
 
@@ -829,18 +813,20 @@
 	gap: 10px;
 	width: 100%;
 	min-width: 0;
-	padding: 11px 12px;
-	border: 1px solid color-mix(in srgb, var(--kocode-accent) 30%, #d8d8d8);
-	border-radius: 10px;
-	background: color-mix(in srgb, var(--kocode-accent) 8%, #ffffff);
+	padding: 10px 12px;
+	border: 1px solid color-mix(in srgb, var(--kocode-accent) 18%, #ecd9bf);
+	border-radius: 17px;
+	border-bottom-left-radius: 7px;
+	background: rgba(255, 253, 250, 0.96);
 	color: var(--kocode-text);
 	cursor: pointer;
 	text-align: left;
+	box-shadow: 0 4px 12px var(--kocode-shadow);
 }
 
 .kocode-survey-jump-card:hover {
-	border-color: color-mix(in srgb, var(--kocode-accent) 52%, #d8d8d8);
-	background: color-mix(in srgb, var(--kocode-accent) 13%, #ffffff);
+	border-color: color-mix(in srgb, var(--kocode-accent) 34%, #ecd9bf);
+	background: color-mix(in srgb, var(--kocode-accent) 5%, #fffdfa);
 }
 
 .kocode-survey-jump-icon {
@@ -850,7 +836,7 @@
 	width: 30px;
 	height: 30px;
 	flex: 0 0 auto;
-	border-radius: 8px;
+	border-radius: 6px;
 	background: var(--kocode-accent);
 	color: white;
 }

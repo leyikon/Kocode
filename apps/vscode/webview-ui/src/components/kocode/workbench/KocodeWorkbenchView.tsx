@@ -1,19 +1,19 @@
 import type { KocodeEvent, KocodeMemoDocument, KocodeSurveySession } from "@shared/kocode"
 import { EmptyRequest } from "@shared/proto/cline/common"
 import {
-    ChevronDownIcon,
-    CopyIcon,
-    ExternalLinkIcon,
-    FileTextIcon,
-    ListFilterIcon,
-    MoreHorizontalIcon,
-    RefreshCwIcon,
-    SearchIcon,
-    SettingsIcon,
-    SlidersHorizontalIcon,
+	ChevronDownIcon,
+	CopyIcon,
+	ExternalLinkIcon,
+	FileTextIcon,
+	ListFilterIcon,
+	MoreHorizontalIcon,
+	RefreshCwIcon,
+	SearchIcon,
+	SettingsIcon,
+	SlidersHorizontalIcon,
 } from "lucide-react"
 import type { ReactNode } from "react"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import kokoAvatar from "@/assets/kocode/koko-avatar.png"
 import { MarkdownRow } from "@/components/chat/MarkdownRow"
 import { KocodeServiceClient } from "@/services/kocode-client"
@@ -38,17 +38,24 @@ const PlaceholderIconButton = ({
 	label,
 	children,
 	className = "",
+	onClick,
 }: {
 	label: string
 	children: ReactNode
 	className?: string
+	onClick?: () => void
 }) => (
-	<button aria-label={label} className={`kw-icon-button${className ? ` ${className}` : ""}`} title={label} type="button">
+	<button
+		aria-label={label}
+		className={`kw-icon-button${className ? ` ${className}` : ""}`}
+		onClick={onClick}
+		title={label}
+		type="button">
 		{children}
 	</button>
 )
 
-const KocodeWorkbenchView = () => {
+const KocodeWorkbenchView = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
 	const [memos, setMemos] = useState<KocodeMemoDocument[]>([])
 	const [selectedMemoId, setSelectedMemoId] = useState<string>()
 	const [activePage, setActivePage] = useState<WorkbenchPage>("report")
@@ -57,13 +64,13 @@ const KocodeWorkbenchView = () => {
 	const [answerDraft, setAnswerDraft] = useState("")
 	const [submitting, setSubmitting] = useState(false)
 
-	useEffect(() => {
+	const loadSession = useCallback(() => {
 		KocodeServiceClient.getKocodeSession(EmptyRequest.create({}))
 			.then((session) => {
 				setMemos(session.memos ?? [])
 				setSelectedMemoId(session.selectedMemoId ?? session.memos?.at(-1)?.id)
+				setSurvey(session.survey ?? null)
 				if (session.survey) {
-					setSurvey(session.survey)
 					// 進行中の survey があれば、開いた時点でアンケートページに合わせる。
 					if (session.survey.status === "active") {
 						setActivePage("survey")
@@ -71,7 +78,10 @@ const KocodeWorkbenchView = () => {
 				}
 			})
 			.catch(console.error)
+	}, [])
 
+	useEffect(() => {
+		loadSession()
 		const cleanup = KocodeServiceClient.subscribeToKocodeEvents(EmptyRequest.create({}), {
 			onResponse: (event: KocodeEvent) => {
 				if (event.type === "memo_ready") {
@@ -103,7 +113,7 @@ const KocodeWorkbenchView = () => {
 		})
 
 		return cleanup
-	}, [])
+	}, [loadSession])
 
 	const submitSurveyAnswer = (text: string) => {
 		const trimmed = text.trim()
@@ -111,17 +121,21 @@ const KocodeWorkbenchView = () => {
 			return
 		}
 		setSubmitting(true)
-		KocodeServiceClient.answerWorkerAsk({ text: trimmed })
-			.catch((error) => {
-				console.error(error)
-				setSubmitting(false)
-			})
+		KocodeServiceClient.answerWorkerAsk({ text: trimmed }).catch((error) => {
+			console.error(error)
+			setSubmitting(false)
+		})
 	}
 
 	const sortedMemos = useMemo(() => sortMemos(memos), [memos])
 	const selectedMemo = useMemo(() => {
 		return sortedMemos.find((memo) => memo.id === selectedMemoId) ?? sortedMemos[0]
 	}, [selectedMemoId, sortedMemos])
+
+	const selectMemo = useCallback((memoId: string) => {
+		setSelectedMemoId(memoId)
+		void KocodeServiceClient.openWorkbench({ memoId })
+	}, [])
 
 	return (
 		<div className="kw-root">
@@ -156,7 +170,7 @@ const KocodeWorkbenchView = () => {
 					<PlaceholderIconButton label="更新">
 						<RefreshCwIcon size={18} />
 					</PlaceholderIconButton>
-					<PlaceholderIconButton label="設定">
+					<PlaceholderIconButton label="設定" onClick={onOpenSettings}>
 						<SettingsIcon size={18} />
 					</PlaceholderIconButton>
 					<img alt="" aria-hidden className="kw-avatar" draggable={false} src={kokoAvatar} />
@@ -272,7 +286,7 @@ const KocodeWorkbenchView = () => {
 									aria-current={selected ? "true" : undefined}
 									className={`kw-list-item${selected ? " is-selected" : ""}`}
 									key={memo.id}
-									onClick={() => setSelectedMemoId(memo.id)}
+									onClick={() => selectMemo(memo.id)}
 									type="button">
 									<span className="kw-list-icon">
 										<FileTextIcon size={16} />

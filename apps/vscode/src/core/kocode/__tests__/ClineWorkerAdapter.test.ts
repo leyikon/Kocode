@@ -394,4 +394,3 @@ describe("ClineWorkerAdapter", () => {
 		worker.dispose()
 	})
 })
-
