@@ -241,7 +241,7 @@ describe("KocodeOrchestrator", () => {
 		)
 		await restored.ensureReady()
 		expect(restored.getSession().memos[0].id).to.equal(memoId)
-		await restored.selectMemo(memoId)
+		await restored.selectWorkbench({ memoId })
 		expect(restored.getSession().selectedMemoId).to.equal(memoId)
 		restored.dispose()
 	})

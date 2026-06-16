@@ -156,11 +156,6 @@
 				"icon": "$(account)"
 			},
 			{
-				"command": "cline.settingsButtonClicked",
-				"title": "Settings",
-				"icon": "$(settings-gear)"
-			},
-			{
 				"command": "cline.dev.createTestTasks",
 				"title": "Create Test Tasks",
 				"category": "Kocode",
@@ -192,12 +187,6 @@
 				"title": "Open 作業メモ Workbench",
 				"category": "Kocode",
 				"icon": "$(book)"
-			},
-			{
-				"command": "kocode.openLegacyClineView",
-				"title": "Open Legacy Cline View",
-				"category": "Kocode",
-				"icon": "$(comment-discussion)"
 			},
 			{
 				"command": "cline.generateGitCommitMessage",
@@ -329,11 +318,6 @@
 				{
 					"command": "cline.accountButtonClicked",
 					"group": "navigation@5",
-					"when": "view == claude-dev.SidebarProvider"
-				},
-				{
-					"command": "cline.settingsButtonClicked",
-					"group": "navigation@6",
 					"when": "view == claude-dev.SidebarProvider"
 				}
 			],

@@ -1,5 +1,6 @@
 export type KocodeContextLayer = "social" | "task" | "revision" | "worker_memory" | "worker_digest"
 export type KocodeCharacterId = "koko" | "hime" | "mana"
+export type KocodeWorkbenchPage = "report" | "survey" | "settings"
 
 export type KocodeTaskMode = "coding" | "debugging" | "learning" | "slide_preview" | "quiz"
 export type KocodeTaskStatus = "draft" | "active" | "paused" | "completed" | "cancelled" | "failed"
@@ -181,6 +182,7 @@ export type KocodeEvent =
 	| { type: "artifact_ready"; artifact: LearningArtifact }
 	| { type: "memo_ready"; memo: KocodeMemoDocument }
 	| { type: "memo_selected"; memoId?: string }
+	| { type: "workbench_page_selected"; page: KocodeWorkbenchPage }
 	// survey_plan 专用事件流。Worker 自主 followup ask 不走这里(仍走 worker_detail)。
 	| { type: "survey_question"; question: KocodeSurveyQuestion }
 	| { type: "survey_updated"; survey: KocodeSurveySession }
@@ -207,10 +209,12 @@ export interface KocodeSessionState {
 	pendingRollback?: PendingRollbackConfirmation
 	memos: KocodeMemoDocument[]
 	selectedMemoId?: string
+	selectedWorkbenchPage?: KocodeWorkbenchPage
 	// 当前 survey_plan 问答会话(进行中存内存)。无会话时为 undefined。
 	survey?: KocodeSurveySession
 }
 
 export interface KocodeOpenWorkbenchRequest {
 	memoId?: string
+	page?: KocodeWorkbenchPage
 }

@@ -1,18 +1,22 @@
 import type {
-    KocodeChatMessage,
-    KocodeEvent,
-    KocodeMemoDocument,
-    KocodeMemoKind,
-    KocodeMemoRef,
-    KocodeSendResult,
-    KocodeSessionState, KocodeSurveyEntry, KocodeSurveyQuestion, KocodeSurveySession,
-    KocodeUserMessage,
-    PendingRollbackConfirmation,
-    TaskSpecPatch,
-    WorkerControlRequest,
-    WorkerDigest,
-    WorkerEvent,
-    WorkerRollbackRestoreType
+	KocodeChatMessage,
+	KocodeEvent,
+	KocodeMemoDocument,
+	KocodeMemoKind,
+	KocodeMemoRef,
+	KocodeSendResult,
+	KocodeSessionState,
+	KocodeSurveyEntry,
+	KocodeSurveyQuestion,
+	KocodeSurveySession,
+	KocodeUserMessage,
+	KocodeWorkbenchPage,
+	PendingRollbackConfirmation,
+	TaskSpecPatch,
+	WorkerControlRequest,
+	WorkerDigest,
+	WorkerEvent,
+	WorkerRollbackRestoreType,
 } from "@shared/kocode"
 import { Controller } from "@/core/controller"
 import { ClineWorkerAdapter } from "./ClineWorkerAdapter"
@@ -160,6 +164,7 @@ export class KocodeOrchestrator {
 	private memos: KocodeMemoDocument[] = []
 	private memoReadyRef?: KocodeMemoRef
 	private selectedMemoId?: string
+	private selectedWorkbenchPage: KocodeWorkbenchPage = "report"
 	// 当前 survey_plan 问答会话(进行中存内存,结束时整理成 survey_record memo 落盘)。
 	private survey?: KocodeSurveySession
 	private readonly memosReady: Promise<void>
@@ -234,18 +239,26 @@ export class KocodeOrchestrator {
 			pendingRollback: this.pendingRollback,
 			memos: [...this.memos],
 			selectedMemoId: this.selectedMemoId,
+			selectedWorkbenchPage: this.selectedWorkbenchPage,
 			survey: this.survey ? { ...this.survey, entries: [...this.survey.entries] } : undefined,
 		}
 	}
 
-	async selectMemo(memoId?: string): Promise<void> {
+	async selectWorkbench(request: { memoId?: string; page?: KocodeWorkbenchPage }): Promise<void> {
 		await this.ensureReady()
-		if (memoId && this.memos.some((memo) => memo.id === memoId)) {
-			this.selectedMemoId = memoId
+		if (request.page) {
+			this.selectedWorkbenchPage = request.page
+		}
+		if (request.memoId) {
+			this.selectedWorkbenchPage = "report"
+		}
+		if (request.memoId && this.memos.some((memo) => memo.id === request.memoId)) {
+			this.selectedMemoId = request.memoId
 		} else if (!this.selectedMemoId) {
 			this.selectedMemoId = this.memos.at(-1)?.id
 		}
 		await this.bus.emit({ type: "memo_selected", memoId: this.selectedMemoId })
+		await this.bus.emit({ type: "workbench_page_selected", page: this.selectedWorkbenchPage })
 	}
 
 	async sendUserMessage(request: KocodeUserMessage): Promise<KocodeSendResult> {
@@ -542,7 +555,10 @@ export class KocodeOrchestrator {
 	}
 
 	private snapshotSurvey(): KocodeSurveySession {
-		const survey = this.survey!
+		const { survey } = this
+		if (!survey) {
+			throw new Error("Cannot snapshot survey before it starts")
+		}
 		return { ...survey, entries: [...survey.entries] }
 	}
 

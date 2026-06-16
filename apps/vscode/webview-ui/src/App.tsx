@@ -34,7 +34,6 @@ const AppContent = () => {
 		hideHistory,
 		hideAccount,
 		hideWorktrees,
-		navigateToSettings,
 	} = useExtensionState()
 
 	const { clineUser, organizations, activeOrganization } = useClineAuth()
@@ -60,11 +59,7 @@ const AppContent = () => {
 	if (webviewMode === "kocode-workbench") {
 		return (
 			<div className="flex h-screen min-h-0 w-full overflow-hidden">
-				{showSettings ? (
-					<SettingsView onDone={hideSettings} targetSection={settingsTargetSection} />
-				) : (
-					<KocodeWorkbenchView onOpenSettings={() => navigateToSettings()} />
-				)}
+				<KocodeWorkbenchView />
 			</div>
 		)
 	}

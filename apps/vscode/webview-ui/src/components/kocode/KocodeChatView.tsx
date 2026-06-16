@@ -303,7 +303,7 @@ const KocodeSurveyCard = ({
 )
 
 const KocodeTypingBubble = ({ character, timestamp }: { character: KocodeCharacter; timestamp: number }) => (
-	<div aria-label={`${character.name}が入力中`} className="kocode-row kocode-row-assistant kocode-typing-row">
+	<output aria-label={`${character.name}が入力中`} className="kocode-row kocode-row-assistant kocode-typing-row">
 		<Avatar character={character} />
 		<div className="kocode-bubble-wrap">
 			<div className="kocode-bubble kocode-assistant-bubble kocode-typing-bubble">
@@ -313,7 +313,7 @@ const KocodeTypingBubble = ({ character, timestamp }: { character: KocodeCharact
 			</div>
 			<time>{formatTime(timestamp)}</time>
 		</div>
-	</div>
+	</output>
 )
 
 const KocodeEmptyChat = ({
@@ -405,7 +405,7 @@ const KocodeContactsView = ({
 )
 
 const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
-	const { apiConfiguration, clineMessages: messages, mode, navigateToSettings } = useExtensionState()
+	const { apiConfiguration, clineMessages: messages, mode } = useExtensionState()
 	const [kocodeMessages, setKocodeMessages] = useState<KocodeChatMessage[]>([])
 	const [selectedCharacterId, setSelectedCharacterId] = useState<KocodeCharacterId>("koko")
 	const [screen, setScreen] = useState<"chat" | "contacts">("chat")
@@ -625,7 +625,7 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 		})
 
 		return cleanup
-	}, [])
+	}, [selectedCharacterId])
 
 	useEffect(() => {
 		const cleanup = UiServiceClient.subscribeToShowWebview(
@@ -673,7 +673,7 @@ const KocodeChatView = ({ isHidden }: KocodeChatViewProps) => {
 					isContactsView={screen === "contacts"}
 					onBackToChat={() => setScreen("chat")}
 					onOpenContacts={() => setScreen("contacts")}
-					onOpenSettings={() => navigateToSettings()}
+					onOpenSettings={() => void KocodeServiceClient.openWorkbench({ page: "settings" })}
 					onOpenWorkbench={() => void KocodeServiceClient.openWorkbench(EmptyRequest.create({}))}
 				/>
 				{screen === "contacts" ? (

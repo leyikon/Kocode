@@ -181,6 +181,12 @@
 	transform: translateY(-1px);
 }
 
+.kw-icon-button.is-active {
+	background: color-mix(in srgb, var(--kw-accent) 14%, white);
+	color: var(--kw-accent);
+	box-shadow: 0 7px 18px rgba(97, 188, 166, 0.13);
+}
+
 .kw-icon-button:focus-visible {
 	outline: 2px solid var(--kw-accent-2);
 	outline-offset: 2px;
@@ -723,6 +729,157 @@
 	content: "✿";
 }
 
+.kw-settings-page {
+	display: grid;
+	min-height: 0;
+	flex: 1;
+	grid-template-columns: 192px minmax(0, 1fr);
+	gap: 10px;
+	padding: 10px 12px 12px;
+}
+
+.kw-settings-nav {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: 7px;
+	overflow: auto;
+	padding: 10px;
+	border: 1px solid var(--kw-line);
+	border-radius: 11px;
+	background: rgba(255, 253, 248, 0.82);
+	box-shadow:
+		0 14px 34px rgba(143, 115, 79, 0.08),
+		0 1px 0 rgba(255, 255, 255, 0.78) inset;
+}
+
+.kw-settings-nav-title {
+	padding: 4px 7px 7px;
+	color: var(--kw-accent);
+	font-size: 12px;
+	font-weight: 820;
+}
+
+.kw-settings-tab {
+	display: grid;
+	width: 100%;
+	height: 36px;
+	grid-template-columns: 20px minmax(0, 1fr);
+	align-items: center;
+	gap: 8px;
+	padding: 0 10px;
+	border: 1px solid transparent;
+	border-radius: 9px;
+	background: transparent;
+	color: var(--kw-text);
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 720;
+	text-align: left;
+	transition:
+		background 120ms ease,
+		border-color 120ms ease,
+		color 120ms ease,
+		transform 120ms ease;
+}
+
+.kw-settings-tab:hover {
+	border-color: rgba(129, 199, 182, 0.32);
+	background: rgba(237, 249, 244, 0.52);
+	color: var(--kw-accent);
+	transform: translateY(-1px);
+}
+
+.kw-settings-tab.is-active {
+	border-color: var(--kw-border);
+	background: linear-gradient(135deg, color-mix(in srgb, var(--kw-user) 42%, white), rgba(237, 249, 244, 0.78));
+	color: var(--kw-accent);
+	box-shadow: 0 9px 22px rgba(97, 188, 166, 0.13);
+}
+
+.kw-settings-tab span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.kw-settings-detail {
+	position: relative;
+	min-width: 0;
+	min-height: 0;
+	overflow: hidden;
+	border: 1px solid rgba(229, 204, 172, 0.66);
+	border-radius: 11px;
+	background:
+		radial-gradient(circle at 97% 8%, rgba(97, 188, 166, 0.08) 0 28px, transparent 30px),
+		linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(255, 250, 241, 0.96));
+	box-shadow:
+		0 15px 38px rgba(143, 115, 79, 0.08),
+		0 1px 0 rgba(255, 255, 255, 0.82) inset;
+}
+
+.kw-settings-detail::before {
+	position: absolute;
+	top: 0;
+	right: 0;
+	left: 0;
+	height: 3px;
+	background: linear-gradient(90deg, var(--kw-accent), rgba(245, 190, 217, 0.78), transparent 72%);
+	content: "";
+}
+
+.kw-settings-content {
+	height: 100%;
+	overflow: auto;
+	padding: 18px 26px 28px;
+	color: var(--kw-text);
+	font-size: 13px;
+}
+
+.kw-settings-section-heading {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 14px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid rgba(129, 199, 182, 0.32);
+	color: var(--kw-accent);
+	font-size: 16px;
+	font-weight: 820;
+	letter-spacing: 0;
+}
+
+.kw-settings-content section,
+.kw-settings-content [class*="rounded"],
+.kw-settings-content [class*="border"] {
+	border-color: rgba(229, 204, 172, 0.72);
+}
+
+.kw-settings-content p,
+.kw-settings-content label,
+.kw-settings-content span,
+.kw-settings-content div {
+	letter-spacing: 0;
+}
+
+.kw-settings-content p {
+	color: var(--kw-muted);
+	line-height: 1.58;
+}
+
+.kw-settings-content a {
+	color: var(--kw-accent);
+}
+
+.kw-settings-content input,
+.kw-settings-content textarea,
+.kw-settings-content select,
+.kw-settings-content vscode-text-field,
+.kw-settings-content vscode-text-area,
+.kw-settings-content vscode-dropdown {
+	max-width: 100%;
+}
+
 @media (max-width: 720px) {
 	.kw-header {
 		grid-template-columns: minmax(0, 1fr) auto;
@@ -779,6 +936,39 @@
 		grid-template-columns: 1fr;
 		justify-items: center;
 		text-align: center;
+	}
+
+	.kw-settings-page {
+		grid-template-columns: 1fr;
+		grid-template-rows: auto minmax(0, 1fr);
+		gap: 8px;
+		padding: 8px;
+	}
+
+	.kw-settings-nav {
+		flex-direction: row;
+		gap: 6px;
+		padding: 8px;
+	}
+
+	.kw-settings-nav-title {
+		display: none;
+	}
+
+	.kw-settings-tab {
+		width: auto;
+		min-width: 42px;
+		grid-template-columns: 18px;
+		justify-items: center;
+		padding: 0 10px;
+	}
+
+	.kw-settings-tab span {
+		display: none;
+	}
+
+	.kw-settings-content {
+		padding: 15px 16px 24px;
 	}
 }
 

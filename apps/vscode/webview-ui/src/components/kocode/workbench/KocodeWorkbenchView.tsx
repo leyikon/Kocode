@@ -1,23 +1,48 @@
-import type { KocodeEvent, KocodeMemoDocument, KocodeSurveySession } from "@shared/kocode"
+import type { ExtensionMessage } from "@shared/ExtensionMessage"
+import type { KocodeEvent, KocodeMemoDocument, KocodeSurveySession, KocodeWorkbenchPage } from "@shared/kocode"
 import { EmptyRequest } from "@shared/proto/cline/common"
+import { ResetStateRequest } from "@shared/proto/cline/state"
 import {
+	CheckCheckIcon,
 	ChevronDownIcon,
 	CopyIcon,
 	ExternalLinkIcon,
 	FileTextIcon,
+	FlaskConicalIcon,
+	HardDriveDownloadIcon,
+	InfoIcon,
 	ListFilterIcon,
+	type LucideIcon,
 	MoreHorizontalIcon,
 	RefreshCwIcon,
 	SearchIcon,
 	SettingsIcon,
 	SlidersHorizontalIcon,
+	SquareMousePointerIcon,
+	SquareTerminalIcon,
+	WrenchIcon,
 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useEvent } from "react-use"
 import kokoAvatar from "@/assets/kocode/koko-avatar.png"
 import { MarkdownRow } from "@/components/chat/MarkdownRow"
+import { useClineAuth } from "@/context/ClineAuthContext"
+import { useExtensionState } from "@/context/ExtensionStateContext"
+import { StateServiceClient } from "@/services/grpc-client"
 import { KocodeServiceClient } from "@/services/kocode-client"
+import { isAdminOrOwner } from "../../account/helpers"
+import AboutSection from "../../settings/sections/AboutSection"
+import ApiConfigurationSection from "../../settings/sections/ApiConfigurationSection"
+import BrowserSettingsSection from "../../settings/sections/BrowserSettingsSection"
+import DebugSection from "../../settings/sections/DebugSection"
+import FeatureSettingsSection from "../../settings/sections/FeatureSettingsSection"
+import GeneralSettingsSection from "../../settings/sections/GeneralSettingsSection"
+import { RemoteConfigSection } from "../../settings/sections/RemoteConfigSection"
+import TerminalSettingsSection from "../../settings/sections/TerminalSettingsSection"
 import "./KocodeWorkbenchView.css"
+
+const IS_DEV = process.env.IS_DEV
 
 const memoKindLabel = (kind: KocodeMemoDocument["kind"]) =>
 	kind === "plan_report" ? "計画" : kind === "survey_record" ? "アンケート" : "完了"
@@ -32,7 +57,33 @@ const formatDateTime = (timestamp: number) =>
 
 const sortMemos = (memos: KocodeMemoDocument[]) => [...memos].sort((a, b) => b.createdAt - a.createdAt)
 
-type WorkbenchPage = "report" | "survey"
+type KocodeSettingsTabId = "api-config" | "features" | "browser" | "terminal" | "general" | "remote-config" | "about" | "debug"
+
+type KocodeSettingsTab = {
+	id: KocodeSettingsTabId
+	name: string
+	headerText: string
+	icon: LucideIcon
+	hidden?: (params?: { activeOrganization: ReturnType<typeof useClineAuth>["activeOrganization"] }) => boolean
+}
+
+const KOCODE_SETTINGS_TABS: KocodeSettingsTab[] = [
+	{ id: "api-config", name: "API", headerText: "API Configuration", icon: SlidersHorizontalIcon },
+	{ id: "features", name: "機能", headerText: "Feature Settings", icon: CheckCheckIcon },
+	{ id: "browser", name: "ブラウザ", headerText: "Browser Settings", icon: SquareMousePointerIcon },
+	{ id: "terminal", name: "ターミナル", headerText: "Terminal Settings", icon: SquareTerminalIcon },
+	{ id: "general", name: "一般", headerText: "General Settings", icon: WrenchIcon },
+	{
+		id: "remote-config",
+		name: "Remote",
+		headerText: "Remote Config",
+		icon: HardDriveDownloadIcon,
+		hidden: ({ activeOrganization } = { activeOrganization: null }) =>
+			!activeOrganization || !isAdminOrOwner(activeOrganization),
+	},
+	{ id: "about", name: "About", headerText: "About", icon: InfoIcon },
+	{ id: "debug", name: "Debug", headerText: "Debug", icon: FlaskConicalIcon, hidden: () => !IS_DEV },
+]
 
 const PlaceholderIconButton = ({
 	label,
@@ -55,10 +106,108 @@ const PlaceholderIconButton = ({
 	</button>
 )
 
-const KocodeWorkbenchView = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
+const renderKocodeSectionHeader = (tabId: string) => {
+	const tab = KOCODE_SETTINGS_TABS.find((item) => item.id === tabId)
+	if (!tab) {
+		return null
+	}
+	return (
+		<div className="kw-settings-section-heading">
+			<tab.icon size={16} />
+			<span>{tab.headerText}</span>
+		</div>
+	)
+}
+
+const KocodeSettingsPanel = () => {
+	const { activeOrganization } = useClineAuth()
+	const { settingsInitialModelTab, version } = useExtensionState()
+	const [activeTab, setActiveTab] = useState<KocodeSettingsTabId>("api-config")
+
+	const visibleTabs = useMemo(
+		() => KOCODE_SETTINGS_TABS.filter((tab) => !tab.hidden?.({ activeOrganization })),
+		[activeOrganization],
+	)
+
+	const handleResetState = useCallback(async (resetGlobalState?: boolean) => {
+		try {
+			await StateServiceClient.resetState(ResetStateRequest.create({ global: resetGlobalState }))
+		} catch (error) {
+			console.error("Failed to reset state:", error)
+		}
+	}, [])
+
+	useEvent(
+		"message",
+		useCallback((event: MessageEvent) => {
+			const message: ExtensionMessage = event.data
+			if (message.type !== "grpc_response") {
+				return
+			}
+			const tabId =
+				message.grpc_response?.message?.key === "scrollToSettings" ? message.grpc_response.message.value : undefined
+			if (KOCODE_SETTINGS_TABS.some((tab) => tab.id === tabId)) {
+				setActiveTab(tabId as KocodeSettingsTabId)
+			}
+		}, []),
+	)
+
+	const contentProps = { renderSectionHeader: renderKocodeSectionHeader }
+	let content: ReactNode = null
+	switch (activeTab) {
+		case "api-config":
+			content = <ApiConfigurationSection {...contentProps} initialModelTab={settingsInitialModelTab} />
+			break
+		case "features":
+			content = <FeatureSettingsSection {...contentProps} />
+			break
+		case "browser":
+			content = <BrowserSettingsSection {...contentProps} />
+			break
+		case "terminal":
+			content = <TerminalSettingsSection {...contentProps} />
+			break
+		case "general":
+			content = <GeneralSettingsSection {...contentProps} />
+			break
+		case "remote-config":
+			content = <RemoteConfigSection {...contentProps} />
+			break
+		case "about":
+			content = <AboutSection {...contentProps} version={version} />
+			break
+		case "debug":
+			content = <DebugSection {...contentProps} onResetState={handleResetState} />
+			break
+	}
+
+	return (
+		<main className="kw-settings-page">
+			<aside aria-label="設定カテゴリ" className="kw-settings-nav">
+				<div className="kw-settings-nav-title">設定</div>
+				{visibleTabs.map((tab) => (
+					<button
+						aria-current={activeTab === tab.id ? "page" : undefined}
+						className={`kw-settings-tab${activeTab === tab.id ? " is-active" : ""}`}
+						key={tab.id}
+						onClick={() => setActiveTab(tab.id)}
+						type="button">
+						<tab.icon size={15} />
+						<span>{tab.name}</span>
+					</button>
+				))}
+			</aside>
+			<section aria-label="設定内容" className="kw-settings-detail">
+				<div className="kw-settings-content">{content}</div>
+			</section>
+		</main>
+	)
+}
+
+const KocodeWorkbenchView = () => {
 	const [memos, setMemos] = useState<KocodeMemoDocument[]>([])
 	const [selectedMemoId, setSelectedMemoId] = useState<string>()
-	const [activePage, setActivePage] = useState<WorkbenchPage>("report")
+	const [activePage, setActivePage] = useState<KocodeWorkbenchPage>("report")
 	// 進行中の survey 会話。survey_question / survey_updated で更新する。
 	const [survey, setSurvey] = useState<KocodeSurveySession | null>(null)
 	const [answerDraft, setAnswerDraft] = useState("")
@@ -70,7 +219,9 @@ const KocodeWorkbenchView = ({ onOpenSettings }: { onOpenSettings: () => void })
 				setMemos(session.memos ?? [])
 				setSelectedMemoId(session.selectedMemoId ?? session.memos?.at(-1)?.id)
 				setSurvey(session.survey ?? null)
-				if (session.survey) {
+				if (session.selectedWorkbenchPage) {
+					setActivePage(session.selectedWorkbenchPage)
+				} else if (session.survey) {
 					// 進行中の survey があれば、開いた時点でアンケートページに合わせる。
 					if (session.survey.status === "active") {
 						setActivePage("survey")
@@ -93,6 +244,9 @@ const KocodeWorkbenchView = ({ onOpenSettings }: { onOpenSettings: () => void })
 				}
 				if (event.type === "memo_selected") {
 					setSelectedMemoId(event.memoId)
+				}
+				if (event.type === "workbench_page_selected") {
+					setActivePage(event.page)
 				}
 				if (event.type === "survey_question") {
 					// 新しい質問が来たら回答欄をリセット。
@@ -137,6 +291,11 @@ const KocodeWorkbenchView = ({ onOpenSettings }: { onOpenSettings: () => void })
 		void KocodeServiceClient.openWorkbench({ memoId })
 	}, [])
 
+	const selectPage = useCallback((page: KocodeWorkbenchPage) => {
+		setActivePage(page)
+		void KocodeServiceClient.openWorkbench({ page })
+	}, [])
+
 	return (
 		<div className="kw-root">
 			<header className="kw-header">
@@ -148,14 +307,14 @@ const KocodeWorkbenchView = ({ onOpenSettings }: { onOpenSettings: () => void })
 					<button
 						aria-current={activePage === "report" ? "page" : undefined}
 						className={activePage === "report" ? "is-active" : ""}
-						onClick={() => setActivePage("report")}
+						onClick={() => selectPage("report")}
 						type="button">
 						レポート
 					</button>
 					<button
 						aria-current={activePage === "survey" ? "page" : undefined}
 						className={activePage === "survey" ? "is-active" : ""}
-						onClick={() => setActivePage("survey")}
+						onClick={() => selectPage("survey")}
 						type="button">
 						アンケート
 					</button>
@@ -170,14 +329,19 @@ const KocodeWorkbenchView = ({ onOpenSettings }: { onOpenSettings: () => void })
 					<PlaceholderIconButton label="更新">
 						<RefreshCwIcon size={18} />
 					</PlaceholderIconButton>
-					<PlaceholderIconButton label="設定" onClick={onOpenSettings}>
+					<PlaceholderIconButton
+						className={activePage === "settings" ? "is-active" : ""}
+						label="設定"
+						onClick={() => selectPage("settings")}>
 						<SettingsIcon size={18} />
 					</PlaceholderIconButton>
 					<img alt="" aria-hidden className="kw-avatar" draggable={false} src={kokoAvatar} />
 				</div>
 			</header>
 
-			{activePage === "survey" ? (
+			{activePage === "settings" ? (
+				<KocodeSettingsPanel />
+			) : activePage === "survey" ? (
 				<main className="kw-survey-page">
 					{survey && (survey.entries.length > 0 || survey.current) ? (
 						<section aria-label="アンケート" className="kw-survey-active">

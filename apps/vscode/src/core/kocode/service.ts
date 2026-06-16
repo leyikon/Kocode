@@ -43,7 +43,7 @@ export async function getKocodeSession(controller: Controller, _request: EmptyRe
 }
 
 export async function openWorkbench(controller: Controller, request: KocodeOpenWorkbenchRequest): Promise<Empty> {
-	await getOrchestrator(controller).selectMemo(request.memoId)
+	await getOrchestrator(controller).selectWorkbench(request)
 	const provider = WebviewProvider.getInstance() as WebviewProvider & {
 		openKocodeWorkbenchPanel?: () => Promise<void>
 	}
